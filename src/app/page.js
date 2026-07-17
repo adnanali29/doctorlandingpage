@@ -792,365 +792,63 @@ export default function Home() {
   const [symptomImgMap, setSymptomImgMap] = useState({});
 
   useEffect(() => {
-    // 1. Hero Content
-    const storedHero = localStorage.getItem("addy_hero_content");
-    if (storedHero) {
-      try { setHeroContent(JSON.parse(storedHero)); } catch(e){}
-    }
-
-    // 2. Specialities
-    const storedSpecs = localStorage.getItem("addy_specialities");
-    if (storedSpecs) {
-      try { setSpecialities(JSON.parse(storedSpecs)); } catch(e){}
-    } else {
-      localStorage.setItem("addy_specialities", JSON.stringify(specialitiesList));
-      setSpecialities(specialitiesList);
-    }
-
-    // 3. Concerns
-    const storedConcerns = localStorage.getItem("addy_concerns");
-    if (storedConcerns) {
-      try { setConcerns(JSON.parse(storedConcerns)); } catch(e){}
-    } else {
-      localStorage.setItem("addy_concerns", JSON.stringify(concernsList));
-      setConcerns(concernsList);
-    }
-
-    // 4. Doctors
-    const storedDocs = localStorage.getItem("addy_doctors");
-    const defaultDoctors = [
-      { name: "Dr. Swastik Pattnaik", spec: "General Physician", exp: "12+ Years Experience", img: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=150&h=150&q=80", focus: "General Physician" },
-      { name: "Dr. Anup Sarkar", spec: "General Surgeon", exp: "15+ Years Experience", img: "https://images.unsplash.com/photo-1579684389782-64d84b5e901a?auto=format&fit=crop&w=150&h=150&q=80", focus: "General Surgeon" },
-      { name: "Dr. Kavya Prakash", spec: "Psychiatrist & Medicine Specialist", exp: "10+ Years Experience", img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=150&h=150&q=80", focus: "Psychiatrist" },
-      { name: "Aliya Hasim", spec: "Mental Health Educator", exp: "6+ Years Experience", img: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=150&h=150&q=80", focus: "Mental Health" },
-      { name: "Dipika Das", spec: "Mental Health Educator", exp: "8+ Years Experience", img: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=150&h=150&q=80", focus: "Mental Health" }
-    ];
-    if (storedDocs) {
-      try { setDoctors(JSON.parse(storedDocs)); } catch(e){}
-    } else {
-      localStorage.setItem("addy_doctors", JSON.stringify(defaultDoctors));
-      setDoctors(defaultDoctors);
-    }
-
-    // 5. Symptom Images Map
-    const storedSymImgs = localStorage.getItem("addy_symptom_images");
-    if (storedSymImgs) {
-      try { setSymptomImgMap(JSON.parse(storedSymImgs)); } catch(e){}
-    } else {
-      localStorage.setItem("addy_symptom_images", JSON.stringify(symptomImages));
-      setSymptomImgMap(symptomImages);
-    }
-
-    // 6. Chatbot Training Rules
-    const storedRules = localStorage.getItem("addy_chatbot_training");
-    const rulesVersion = localStorage.getItem("addy_chatbot_rules_version");
-    if (storedRules && rulesVersion === "v4") {
-      try { setTrainingRules(JSON.parse(storedRules)); } catch(e){}
-    } else {
-      const defaultRules = [
-        {
-          keywords: "fever, high temperature, warmth, body hot",
-          diagnosis: "General Physician - Viral Fever / Pyrexia",
-          specialist: "General Physician",
-          advice: "Monitor body temperature every 4 hours, stay hydrated, and take plenty of rest.",
-          userExample: "I have a high temperature and feel hot all over my body.",
-          botResponse: "Hey! Sorry to hear you are running a temperature. Fever often signals a viral response. I recommend tracking it and booking a consult with our General Physician (₹699) to confirm if you need medical care."
-        },
-        {
-          keywords: "cold, cough, runny nose, sneezing, sneeze, congestion",
-          diagnosis: "General Physician - Cold & Cough (Common Cold / Upper Respiratory Infection)",
-          specialist: "General Physician",
-          advice: "Inhale steam, drink warm fluids, and rest to ease throat and nasal congestion.",
-          userExample: "I have been coughing and sneezing with a runny nose all day.",
-          botResponse: "Hey! A cold and cough can be very irritating. Drinking warm liquids and steam inhalation will help. I recommend consult with a General Physician (₹699) to check your chest health."
-        },
-        {
-          keywords: "headache, head pain, migraine, temple pain",
-          diagnosis: "General Physician - Headache (Tension Headache / Migraine)",
-          specialist: "General Physician",
-          advice: "Rest in a quiet, dark room, stay hydrated, and avoid screen time.",
-          userExample: "My temples are throbbing and my head hurts whenever I look at screens.",
-          botResponse: "Hey! I understand that head pain is very draining. Screen glare makes migraines worse. Rest in a dark room. Let's get you checked by our General Physician (₹699)."
-        },
-        {
-          keywords: "body pain, body ache, muscle pain, muscle ache, joints pain",
-          diagnosis: "General Physician - Body Pain (Myalgia)",
-          specialist: "General Physician",
-          advice: "Rest your muscles, apply a warm compress if needed, and stay hydrated.",
-          userExample: "My muscles are aching and my joints hurt all over.",
-          botResponse: "Hey! Muscle fatigue and body aches can indicate general weakness or viral strain. I recommend consult with our General Physician (₹699) to diagnose the source."
-        },
-        {
-          keywords: "acidity, heartburn, acid reflux",
-          diagnosis: "General Physician - Acidity (Hyperacidity / Reflux)",
-          specialist: "General Physician",
-          advice: "Avoid heavy/spicy foods, drink cold milk, and stay upright after meals.",
-          userExample: "I have a burning sensation in my chest after eating spicy food.",
-          botResponse: "Hey! Chest burn after meals is usually acidity or acid reflux. Try to sit upright and avoid heavy spices. A consultation with our General Physician (₹699) will help you get quick antacid relief."
-        },
-        {
-          keywords: "allergy, allergies, skin allergy, rash, red spots",
-          diagnosis: "General Physician - Allergies (Allergic Reaction / Urticaria)",
-          specialist: "General Physician",
-          advice: "Avoid contact with known allergens. Keep the skin cool and hydrated.",
-          userExample: "I have developed red itchy rashes and allergies on my skin.",
-          botResponse: "Hey! Red itchy rashes suggest an allergic reaction. Please avoid scratching the skin. I highly recommend consult with our General Physician (₹699) to identify the allergen."
-        },
-        {
-          keywords: "high bp, hypertension, blood pressure, high blood pressure",
-          diagnosis: "Medicine Specialist - High BP (Hypertension)",
-          specialist: "Medicine Specialist",
-          advice: "Rest in a quiet place, avoid high sodium food, and take your prescribed drugs.",
-          userExample: "My blood pressure is high and my head feels heavy.",
-          botResponse: "Hey! A heavy head with high blood pressure is something to check carefully. Please rest in a calm environment. Let's schedule a session with our Medicine Specialist (₹699) to check your vitals."
-        },
-        {
-          keywords: "copd, asthma, wheezing, bronchitis",
-          diagnosis: "Medicine Specialist - COPD (Chronic Obstructive Pulmonary Disease)",
-          specialist: "Medicine Specialist",
-          advice: "Use your rescue inhaler if prescribed. Avoid dusty or smoky spaces.",
-          userExample: "I am wheezing and finding it hard to breathe due to my asthma.",
-          botResponse: "Hey! Wheezing and breathing constraints are critical. Please use your rescue inhaler. I strongly recommend consult with our Medicine Specialist (₹699) to review your chronic plan."
-        },
-        {
-          keywords: "erectile dysfunction, ed, impotence, erection issue",
-          diagnosis: "Sexologist - Erectile Dysfunction",
-          specialist: "Sexologist",
-          advice: "Reduce daily stress, focus on physical exercise, and consult privately.",
-          userExample: "I have been struggling to maintain an erection and feel stressed.",
-          botResponse: "Hey! There is absolutely no need to worry or feel embarrassed. Erection issues are very common and highly treatable. A private, confidential consultation with our Sexologist (₹699) will help you resolve this."
-        },
-        {
-          keywords: "premature ejaculation, pe, early ejaculation",
-          diagnosis: "Sexologist - Premature Ejaculation",
-          specialist: "Sexologist",
-          advice: "Try pelvic floor control exercises and reduce anxiety before intimacy.",
-          userExample: "I suffer from early ejaculation and it is affecting my relationship.",
-          botResponse: "Hey! Please rest assured that early ejaculation is a highly treatable concern. Try pelvic exercises to help. I suggest booking a confidential consult with our Sexologist (₹699) to get a proper solution."
-        },
-        {
-          keywords: "low libido, sex drive, low sex drive",
-          diagnosis: "Sexologist - Low Libido (Hypoactive Sexual Desire)",
-          specialist: "Sexologist",
-          advice: "Focus on sleep, check hormone levels, and discuss with a specialist.",
-          userExample: "My sex drive is extremely low lately and I don't feel like intimacy.",
-          botResponse: "Hey! Low sex drive can stem from stress, hormonal shifts, or fatigue. A consultation with our Sexologist (₹699) is a great, private way to review hormone markers and find a solution."
-        },
-        {
-          keywords: "male infertility, sperm count, semen issue",
-          diagnosis: "Sexologist - Male Infertility (Factor Infertility)",
-          specialist: "Sexologist",
-          advice: "Maintain a healthy diet, avoid heat exposure, and check semen parameters.",
-          userExample: "We have been trying for a baby and I want to test my sperm count.",
-          botResponse: "Hey! Testing semen quality is a standard first step. Avoid tight clothing or hot baths. I suggest scheduling a consult with our Sexologist (₹699) to guide you through fertility protocols."
-        },
-        {
-          keywords: "std, stds, hiv, syphilis, gonorrhea, genital rash",
-          diagnosis: "Sexologist - STDs (Suspected STI)",
-          specialist: "Sexologist",
-          advice: "Avoid sexual contact until tested. Keep the area clean and dry.",
-          userExample: "I have a burning sensation and genital rash after unprotected intimacy.",
-          botResponse: "Hey! Genital rashes or burning after intimacy suggest a possible infection. Please avoid further contact until tested. I highly recommend a private session with our Sexologist (₹699) for a safe clinical review."
-        },
-        {
-          keywords: "pcos, pcod, cyst, ovarian cysts",
-          diagnosis: "Gynaecologist - PCOS (Polycystic Ovary Syndrome)",
-          specialist: "Gynaecologist",
-          advice: "Track menstrual irregularities, maintain a balanced diet, and test hormone profiles.",
-          userExample: "I have rapid weight gain, facial hair, and think I might have PCOS.",
-          botResponse: "Hey! Facial hair, irregular cycles, and weight gain are common indicators of PCOS. Our Gynaecologist (₹699) can guide you through ovarian scans and hormonal therapy to balance your system."
-        },
-        {
-          keywords: "pregnancy, pregnant, baby check, prenatal",
-          diagnosis: "Gynaecologist - Pregnancy (Antenatal Care)",
-          specialist: "Gynaecologist",
-          advice: "Avoid self-medication, consume prenatal vitamins, and track fetal movement.",
-          userExample: "I just had a positive pregnancy test and want to know next steps.",
-          botResponse: "Hey! Congratulations! Please make sure to avoid any self-medication and start prenatal vitamins. I highly suggest booking a session with our Gynaecologist (₹699) to schedule your first scan."
-        },
-        {
-          keywords: "irregular periods, missed period, cycle late",
-          diagnosis: "Gynaecologist - Irregular Periods",
-          specialist: "Gynaecologist",
-          advice: "Maintain a menstrual calendar log. Avoid extreme calorie restrictions.",
-          userExample: "My period is late by two weeks and my cycle is always irregular.",
-          botResponse: "Hey! A late period can be triggered by stress, thyroid issues, or PCOS. Tracking your dates is very helpful. I highly recommend consult with our Gynaecologist (₹699) to regulate your cycle."
-        },
-        {
-          keywords: "menopause, hot flashes, night sweats",
-          diagnosis: "Gynaecologist - Menopause (Climacteric Syndrome)",
-          specialist: "Gynaecologist",
-          advice: "Dress in layers to manage hot flashes, exercise regularly, and ensure calcium intake.",
-          userExample: "I am experiencing hot flashes, night sweats, and irregular cycles in my late 40s.",
-          botResponse: "Hey! Hot flashes and night sweats are classic indicators of menopause. Ensure good calcium intake. I recommend a consultation with our Gynaecologist (₹699) to discuss relief options."
-        },
-        {
-          keywords: "uti, urine infection, burning urine, painful urination",
-          diagnosis: "Gynaecologist - UTI (Urinary Tract Infection)",
-          specialist: "Gynaecologist",
-          advice: "Drink plenty of water, do not hold urine, and maintain local hygiene.",
-          userExample: "I feel a severe burning sensation when passing urine and go frequently.",
-          botResponse: "Hey! Burning and frequent urination are classic signs of a UTI. Please drink a lot of water to help flush the tract. I highly suggest scheduling with our Gynaecologist (₹699) to prescribe the correct antibiotic."
-        },
-        {
-          keywords: "thyroid, goitre, hypothyroidism, hyperthyroidism",
-          diagnosis: "Medicine Specialist - Thyroid (Gland Dysfunction)",
-          specialist: "Medicine Specialist",
-          advice: "Take your thyroid medication on an empty stomach in the morning.",
-          userExample: "I am feeling constantly fatigued and my thyroid test values are abnormal.",
-          botResponse: "Hey! Fatigue combined with abnormal thyroid numbers points to thyroid dysfunction. Always take thyroid drugs on an empty stomach. I recommend booking with our Medicine Specialist (₹699) to adjust your dose."
-        },
-        {
-          keywords: "obesity, overweight, rapid weight gain",
-          diagnosis: "Medicine Specialist - Obesity (Metabolic Excess)",
-          specialist: "Medicine Specialist",
-          advice: "Integrate active exercises, monitor daily calorie intake, and evaluate hormones.",
-          userExample: "I am gaining weight rapidly despite dieting and need metabolic guidance.",
-          botResponse: "Hey! Unexplained weight gain despite diets often points to underlying metabolic or thyroid factors. I suggest consulting our Medicine Specialist (₹699) to run hormone evaluations and build a structured health plan."
-        },
-        {
-          keywords: "hormonal disorders, hormonal imbalance, hormones",
-          diagnosis: "Medicine Specialist - Hormonal Disorders",
-          specialist: "Medicine Specialist",
-          advice: "Maintain a sleep schedule, avoid processed sugars, and run hormone panels.",
-          userExample: "I have mood swings, hair loss, and suspect a hormonal imbalance.",
-          botResponse: "Hey! Mood fluctuations and hair loss are closely linked to hormonal imbalances. I recommend setting up a virtual consult with our Medicine Specialist (₹699) to isolate which hormone is fluctuating."
-        },
-        {
-          keywords: "osteoporosis, bone density, weak bones",
-          diagnosis: "Medicine Specialist - Osteoporosis (Bone Density Loss)",
-          specialist: "Medicine Specialist",
-          advice: "Include Calcium and Vitamin D3 supplements in your diet. Practice low-impact weight exercises.",
-          userExample: "My doctor said my bone density is low and I have osteoporosis.",
-          botResponse: "Hey! Weak bones and low density put you at risk of fractures. Ensure good Calcium and D3 intake. I highly recommend consult with our Medicine Specialist (₹699) to start bone density therapies."
-        },
-        {
-          keywords: "hernia, groin lump, umbilical lump",
-          diagnosis: "General Surgeon - Hernia (Inguinal / Umbilical)",
-          specialist: "General Surgeon",
-          advice: "Avoid heavy lifting, keep bowel movements smooth, and get a surgical check.",
-          userExample: "I have a painful lump in my groin that bulges when I cough.",
-          botResponse: "Hey! A groin bulge that swells when you cough is highly characteristic of a hernia. Avoid lifting heavy weights. I recommend consult with our General Surgeon (₹699) to evaluate if surgery is required."
-        },
-        {
-          keywords: "gallstones, gallstone, gall bladder pain",
-          diagnosis: "General Surgeon - Gallstones (Cholelithiasis)",
-          specialist: "General Surgeon",
-          advice: "Avoid fatty, greasy meals to prevent gall bladder contractions and pain.",
-          userExample: "I have sharp pain in my upper right abdomen that spreads to my back.",
-          botResponse: "Hey! Sharp upper right side abdomen pain spreading to the back suggest gallstones. Avoid greasy foods. I suggest setting up an appointment with our General Surgeon (₹699) to review your scans."
-        },
-        {
-          keywords: "piles, hemorrhoids, bleeding stool",
-          diagnosis: "General Surgeon - Piles (Hemorrhoids)",
-          specialist: "General Surgeon",
-          advice: "Eat high-fiber foods, drink lots of water, and avoid straining during bowel movements.",
-          userExample: "I have severe pain and notice bleeding during bowel movements.",
-          botResponse: "Hey! Bleeding and pain during stools points to piles or hemorrhoids. Avoid straining and drink plenty of water. I recommend consult with our General Surgeon (₹699) to check the severity."
-        },
-        {
-          keywords: "lipoma, skin lump, fatty lump",
-          diagnosis: "General Surgeon - Lipoma (Benign Skin Lump)",
-          specialist: "General Surgeon",
-          advice: "Monitor the size of the lump. Surgical excision is optional and simple.",
-          userExample: "I have a soft, painless lump under my skin that moves when touched.",
-          botResponse: "Hey! A soft, moveable, painless lump under the skin is typical of a benign lipoma. I recommend a consultation with our General Surgeon (₹699) to evaluate if you want it simply removed."
-        },
-        {
-          keywords: "appendicitis, appendix, lower right stomach pain",
-          diagnosis: "General Surgeon - Appendicitis (Acute Appendix)",
-          specialist: "General Surgeon",
-          advice: "Do not eat or drink anything, avoid painkillers, and seek surgical care immediately.",
-          userExample: "I have severe pain that started around my navel and moved to the lower right side.",
-          botResponse: "Hey! Pain shifting from the navel to the lower right side of the stomach points to appendicitis. Avoid eating or drinking. I recommend consult with our General Surgeon (₹699) to run diagnostic checks."
-        },
-        {
-          keywords: "anxiety, panic attack, stressed, stress",
-          diagnosis: "Psychiatrist - Anxiety (Generalized Anxiety)",
-          specialist: "Psychiatrist",
-          advice: "Practice box breathing (inhale 4s, hold 4s, exhale 4s, hold 4s).",
-          userExample: "I feel constantly anxious, stressed, and suffer from random panic attacks.",
-          botResponse: "Hey! Chronic stress and panic attacks are very difficult to cope with. Practice slow box breathing. I strongly suggest booking a therapy session with our Psychiatrist (₹699) to build strong coping strategies."
-        },
-        {
-          keywords: "depression, depressed, sad, sadness",
-          diagnosis: "Psychiatrist - Depression (Depressive Episode)",
-          specialist: "Psychiatrist",
-          advice: "Engage in light physical walking, maintain a sleep routine, and seek guidance.",
-          userExample: "I feel persistently sad, low, and have lost interest in all activities.",
-          botResponse: "Hey! Feeling low and losing interest in things can indicate depression. Please remember you don't have to carry this alone. I highly recommend consult with our Psychiatrist (₹699) for support."
-        },
-        {
-          keywords: "ocd, obsessive compulsive, checking things",
-          diagnosis: "Psychiatrist - OCD (Obsessive Compulsive)",
-          specialist: "Psychiatrist",
-          advice: "Attempt to delay compulsive reactions by 2 minutes when triggers occur.",
-          userExample: "I have repetitive thoughts and feel forced to wash my hands constantly.",
-          botResponse: "Hey! Repetitive thoughts and compulsive hand washing are classic indicators of OCD. Delaying the action can help break the cycle. I suggest consult with our Psychiatrist (₹699) to start therapy."
-        },
-        {
-          keywords: "bipolar disorder, bipolar, mood swings",
-          diagnosis: "Psychiatrist - Bipolar Disorder",
-          specialist: "Psychiatrist",
-          advice: "Maintain a structured mood chart log and ensure stable sleep hours.",
-          userExample: "I swing between extreme happiness and deep sadness within days.",
-          botResponse: "Hey! Swings between mania and low moods point to bipolar disorder. Keeping a structured sleep cycle is helpful. I recommend consult with our Psychiatrist (₹699) to help stabilize your moods."
-        },
-        {
-          keywords: "insomnia, sleep issue, cannot sleep, sleeplessness",
-          diagnosis: "Psychiatrist - Insomnia (Sleep Disturbance)",
-          specialist: "Psychiatrist",
-          advice: "Avoid screen exposure 1 hour before bed, avoid late caffeine.",
-          userExample: "I struggle to fall asleep at night and wake up tired every morning.",
-          botResponse: "Hey! Sleeplessness impacts overall recovery and energy. Try to limit late caffeine and screen time. I highly recommend consult with our Psychiatrist (₹699) to regulate your sleep cycle."
-        },
-        {
-          keywords: "ibs, irritable bowel, stomach cramps",
-          diagnosis: "Gastroenterologist - IBS (Irritable Bowel Syndrome)",
-          specialist: "Gastroenterologist",
-          advice: "Avoid gluten and dairy products, eat high-fiber food, and reduce stress.",
-          userExample: "I suffer from constant stomach cramps, gas, alternating diarrhea and constipation.",
-          botResponse: "Hey! Stomach cramps and bowel fluctuations are typical signs of IBS. Avoiding gluten can give relief. I recommend scheduling a consult with our Gastroenterologist (₹699) to guide your diet."
-        },
-        {
-          keywords: "gerd, reflux, chronic acid",
-          diagnosis: "Gastroenterologist - GERD (Gastroesophageal Reflux)",
-          specialist: "Gastroenterologist",
-          advice: "Avoid lying down for 2 hours after meals, eat smaller food portions.",
-          userExample: "I have chronic acid reflux and a sour taste in my mouth after sleeping.",
-          botResponse: "Hey! Chronic acid reflux leaving a sour taste is typical of GERD. Try to eat smaller portions and stay upright after dinner. I highly suggest consult with our Gastroenterologist (₹699)."
-        },
-        {
-          keywords: "gastritis, stomach burning, bloating",
-          diagnosis: "Gastroenterologist - Gastritis (Stomach Lining Inflammation)",
-          specialist: "Gastroenterologist",
-          advice: "Avoid NSAID painkillers, stop smoking, and eat bland foods.",
-          userExample: "I have a constant burning pain in my stomach along with heavy bloating.",
-          botResponse: "Hey! Stomach lining burning and bloating suggest gastritis. Avoid greasy foods and NSAID painkillers. I recommend setting up a consultation with our Gastroenterologist (₹699) for care."
-        },
-        {
-          keywords: "constipation, hard stool, bowel movement",
-          diagnosis: "Gastroenterologist - Constipation",
-          specialist: "Gastroenterologist",
-          advice: "Consume adequate soluble fiber and drink warm liquids in the morning.",
-          userExample: "I have not had a bowel movement in three days and feel extremely heavy.",
-          botResponse: "Hey! Chronic constipation can make you feel bloated and heavy. Drink warm fluids in the morning. I recommend consulting our Gastroenterologist (₹699) to regulate your digestive patterns."
-        },
-        {
-          keywords: "mental counseling, stress release, daily stress, emotional support, grief counseling, relationship issues, emotional counselor, relationship stress",
-          diagnosis: "Mental Health - Stress, Grief & Relationship Counseling",
-          specialist: "Mental Health",
-          advice: "Take daily breaks, practice mindfulness, set healthy boundaries, and speak to a wellness coach.",
-          userExample: "I am feeling overwhelmed by daily stress and need emotional counseling.",
-          botResponse: "Hey! Whether it's daily stress, grief, or relationship struggles — our Mental Health team is here for you. I recommend a confidential premium counseling session (₹799) to get the support you deserve."
+    // Load all CMS data from the database via API
+    const loadData = async () => {
+      try {
+        // 1. Hero Content
+        const heroRes = await fetch("/api/hero");
+        if (heroRes.ok) {
+          const heroData = await heroRes.json();
+          setHeroContent(heroData);
         }
-      ];
-      localStorage.setItem("addy_chatbot_training", JSON.stringify(defaultRules));
-      localStorage.setItem("addy_chatbot_rules_version", "v4");
-      setTrainingRules(defaultRules);
-    }
+
+        // 2. Specialities
+        const specsRes = await fetch("/api/specialities");
+        if (specsRes.ok) {
+          const specsData = await specsRes.json();
+          setSpecialities(specsData);
+        }
+
+
+        // 3. Concerns
+        const concernsRes = await fetch("/api/concerns");
+        if (concernsRes.ok) {
+          const concernsData = await concernsRes.json();
+          setConcerns(concernsData);
+        }
+
+
+        // 4. Doctors
+        const docsRes = await fetch("/api/doctors");
+        if (docsRes.ok) {
+          const docsData = await docsRes.json();
+          setDoctors(docsData);
+        }
+
+        // 5. Symptom Images — build map from concerns img field
+        const imgMap = {};
+        const concernsForImg = await fetch("/api/concerns");
+        if (concernsForImg.ok) {
+          const cd = await concernsForImg.json();
+          cd.forEach(c => { if (c.img) imgMap[c.key] = c.img; });
+          setSymptomImgMap(imgMap);
+        }
+
+        // 6. Chatbot Training Rules
+        const rulesRes = await fetch("/api/chatbot-rules");
+        if (rulesRes.ok) {
+          const rulesData = await rulesRes.json();
+          setTrainingRules(rulesData);
+        }
+      } catch (err) {
+        console.error("Failed to load data from DB:", err);
+      }
+    };
+    loadData();
   }, []);
 
+
+  // Refs for scroll sliders
   // Refs for scroll sliders
   const specialitiesSliderRef = useRef(null);
   const concernsSliderRef = useRef(null);
@@ -1283,11 +981,11 @@ export default function Home() {
     setIsBookingModalOpen(false);
   };
 
-  const submitSimplifiedBooking = (e) => {
+  const submitSimplifiedBooking = async (e) => {
     e.preventDefault();
     setBookingStep("loading");
 
-    // Save to localStorage
+    // Save to database via API
     const newBooking = {
       id: "booking_" + Date.now(),
       name: bookingName || "Patient",
@@ -1303,10 +1001,13 @@ export default function Home() {
     };
 
     try {
-      const existingBookings = JSON.parse(localStorage.getItem("addy_consultations") || "[]");
-      localStorage.setItem("addy_consultations", JSON.stringify([newBooking, ...existingBookings]));
+      await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newBooking)
+      });
     } catch (err) {
-      console.error("Failed to save booking to localStorage", err);
+      console.error("Failed to save booking to DB", err);
     }
 
     setTimeout(() => {

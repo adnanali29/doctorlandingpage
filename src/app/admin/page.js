@@ -824,67 +824,56 @@ export default function AdminDashboard() {
 
   // Load datasets on mount
   useEffect(() => {
-    // 1. Bookings
-    const storedBookings = localStorage.getItem("addy_consultations");
-    const list = storedBookings ? JSON.parse(storedBookings) : [];
-    setBookings(list);
-    calculateStats(list);
+    const loadData = async () => {
+      try {
+        // 1. Bookings
+        const bookingsRes = await fetch("/api/bookings");
+        if (bookingsRes.ok) {
+          const list = await bookingsRes.json();
+          setBookings(list);
+          calculateStats(list);
+        }
 
-    // 2. Hero Content
-    const storedHero = localStorage.getItem("addy_hero_content");
-    if (storedHero) {
-      try { setHeroContent(JSON.parse(storedHero)); } catch(e){}
-    }
+        // 2. Hero Content
+        const heroRes = await fetch("/api/hero");
+        if (heroRes.ok) {
+          const heroData = await heroRes.json();
+          setHeroContent(heroData);
+        }
 
-    // 3. Specialties
-    const storedSpecs = localStorage.getItem("addy_specialities");
-    const specsVersion = localStorage.getItem("addy_specialities_version");
-    if (storedSpecs && specsVersion === "v4") {
-      try { setSpecialities(JSON.parse(storedSpecs)); } catch(e){}
-    } else {
-      const initialSpecs = [
-        { title: "General Physician", desc: "Fever, cough, metabolic issues, routine diagnoses", fee: "₹699", icon: "shield" },
-        { title: "Medicine Specialist", desc: "Internal organ therapy, chronic disease plans", fee: "₹699", icon: "beaker" },
-        { title: "Sexologist", desc: "Confidential therapy, private relationship support", fee: "₹699", icon: "heart" },
-        { title: "Gynaecologist", desc: "Menstruation parameters, maternal and PCOS advice", fee: "₹699", icon: "user-group" },
-        { title: "Gastroenterologist", desc: "Severe acidity, IBS, gut microbiome tracking", fee: "₹699", icon: "clipboard" },
-        { title: "Psychiatrist", desc: "Mental diagnoses, emotional therapy support", fee: "₹699", icon: "bolt" },
-        { title: "Mental Health", desc: "Daily counseling, grief support, anxiety reduction & relationship coaching", fee: "₹799", tag: "PREMIUM", icon: "face-smile" },
-        { title: "General Surgeon", desc: "Post-op counseling, minor outpatient assessment", fee: "₹699", icon: "scissors" }
-      ];
-      localStorage.setItem("addy_specialities", JSON.stringify(initialSpecs));
-      localStorage.setItem("addy_specialities_version", "v4");
-      setSpecialities(initialSpecs);
-    }
+        // 3. Specialties
+        const specsRes = await fetch("/api/specialities");
+        if (specsRes.ok) {
+          setSpecialities(await specsRes.json());
+        }
 
-    // 4. Symptoms
-    const storedConcerns = localStorage.getItem("addy_concerns");
-    if (storedConcerns) {
-      try { setConcerns(JSON.parse(storedConcerns)); } catch(e){}
-    }
+        // 4. Concerns/Symptoms
+        const concernsRes = await fetch("/api/concerns");
+        if (concernsRes.ok) {
+          const concernsData = await concernsRes.json();
+          setConcerns(concernsData);
+          // Build symptom image map
+          const imgMap = {};
+          concernsData.forEach(c => { if (c.img) imgMap[c.key] = c.img; });
+          setSymptomImgMap(imgMap);
+        }
 
-    // 5. Doctors
-    const storedDocs = localStorage.getItem("addy_doctors");
-    if (storedDocs) {
-      try { setDoctors(JSON.parse(storedDocs)); } catch(e){}
-    }
+        // 5. Doctors
+        const docsRes = await fetch("/api/doctors");
+        if (docsRes.ok) {
+          setDoctors(await docsRes.json());
+        }
 
-    // 6. Symptom Images
-    const storedSymImgs = localStorage.getItem("addy_symptom_images");
-    if (storedSymImgs) {
-      try { setSymptomImgMap(JSON.parse(storedSymImgs)); } catch(e){}
-    }
-
-    // 7. Chatbot Training Rules
-    const storedRules = localStorage.getItem("addy_chatbot_training");
-    const rulesVersion = localStorage.getItem("addy_chatbot_rules_version");
-    if (storedRules && rulesVersion === "v4") {
-      try { setTrainingRules(JSON.parse(storedRules)); } catch(e){}
-    } else {
-      localStorage.setItem("addy_chatbot_training", JSON.stringify(defaultTrainingRules));
-      localStorage.setItem("addy_chatbot_rules_version", "v4");
-      setTrainingRules(defaultTrainingRules);
-    }
+        // 6. Chatbot Training Rules
+        const rulesRes = await fetch("/api/chatbot-rules");
+        if (rulesRes.ok) {
+          setTrainingRules(await rulesRes.json());
+        }
+      } catch (err) {
+        console.error("Failed to load admin data:", err);
+      }
+    };
+    loadData();
   }, []);
 
   // Auto-scroll test chat
@@ -904,27 +893,38 @@ export default function AdminDashboard() {
   };
 
   // --- Hero Section Save ---
-  const handleSaveHero = (e) => {
+  const handleSaveHero = async (e) => {
     e.preventDefault();
-    localStorage.setItem("addy_hero_content", JSON.stringify(heroContent));
+    await fetch("/api/hero", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(heroContent)
+    });
     alert("Hero Content successfully saved! It will now reflect on the clinic landing page.");
   };
 
   // --- Specialty Save / Add / Delete ---
-  const handleSaveSpeciality = (e) => {
+  const handleSaveSpeciality = async (e) => {
     e.preventDefault();
-    let updated;
     if (editingSpeciality !== null) {
-      updated = [...specialities];
-      updated[editingSpeciality] = specialityForm;
+      const spec = specialities[editingSpeciality];
+      await fetch(`/api/specialities/${spec.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(specialityForm)
+      });
       setEditingSpeciality(null);
     } else {
-      updated = [...specialities, specialityForm];
+      await fetch("/api/specialities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(specialityForm)
+      });
       setIsAddingSpeciality(false);
     }
-    setSpecialities(updated);
-    localStorage.setItem("addy_specialities", JSON.stringify(updated));
     setSpecialityForm({ title: "", desc: "", fee: "", img: "" });
+    const res = await fetch("/api/specialities");
+    if (res.ok) setSpecialities(await res.json());
   };
 
   const handleStartEditSpeciality = (idx) => {
@@ -933,83 +933,90 @@ export default function AdminDashboard() {
     setIsAddingSpeciality(true);
   };
 
-  const handleDeleteSpeciality = (idx) => {
+  const handleDeleteSpeciality = async (idx) => {
     if (!confirm("Delete this specialty?")) return;
-    const updated = specialities.filter((_, i) => i !== idx);
-    setSpecialities(updated);
-    localStorage.setItem("addy_specialities", JSON.stringify(updated));
+    const spec = specialities[idx];
+    await fetch(`/api/specialities/${spec.id}`, { method: "DELETE" });
+    const res = await fetch("/api/specialities");
+    if (res.ok) setSpecialities(await res.json());
   };
 
   // --- Symptom Save / Add / Delete ---
-  const handleSaveSymptom = (e) => {
+  const handleSaveSymptom = async (e) => {
     e.preventDefault();
-    let updatedConcerns;
-    let updatedImgs = { ...symptomImgMap };
-
     const cleanKey = symptomForm.key.toLowerCase().trim().replace(/\s+/g, "_");
     const formattedSymptom = { ...symptomForm, key: cleanKey };
 
     if (editingSymptom !== null) {
-      const oldKey = concerns[editingSymptom].key;
-      updatedConcerns = [...concerns];
-      updatedConcerns[editingSymptom] = formattedSymptom;
-      
-      // Update image mapping
-      delete updatedImgs[oldKey];
-      updatedImgs[cleanKey] = formattedSymptom.img;
+      const concern = concerns[editingSymptom];
+      await fetch(`/api/concerns/${concern.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formattedSymptom)
+      });
       setEditingSymptom(null);
     } else {
-      updatedConcerns = [...concerns, formattedSymptom];
-      updatedImgs[cleanKey] = formattedSymptom.img;
+      await fetch("/api/concerns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formattedSymptom)
+      });
       setIsAddingSymptom(false);
     }
-
-    setConcerns(updatedConcerns);
-    setSymptomImgMap(updatedImgs);
-    localStorage.setItem("addy_concerns", JSON.stringify(updatedConcerns));
-    localStorage.setItem("addy_symptom_images", JSON.stringify(updatedImgs));
     setSymptomForm({ name: "", key: "", specialist: "", count: "", img: "" });
+    const res = await fetch("/api/concerns");
+    if (res.ok) {
+      const updated = await res.json();
+      setConcerns(updated);
+      const imgMap = {};
+      updated.forEach(c => { if (c.img) imgMap[c.key] = c.img; });
+      setSymptomImgMap(imgMap);
+    }
   };
 
   const handleStartEditSymptom = (idx) => {
     setEditingSymptom(idx);
     const item = concerns[idx];
-    setSymptomForm({
-      ...item,
-      img: symptomImgMap[item.key] || ""
-    });
+    setSymptomForm({ ...item, img: item.img || symptomImgMap[item.key] || "" });
     setIsAddingSymptom(true);
   };
 
-  const handleDeleteSymptom = (idx) => {
+  const handleDeleteSymptom = async (idx) => {
     if (!confirm("Delete this symptom?")) return;
     const item = concerns[idx];
-    const updatedConcerns = concerns.filter((_, i) => i !== idx);
-    
-    let updatedImgs = { ...symptomImgMap };
-    delete updatedImgs[item.key];
-
-    setConcerns(updatedConcerns);
-    setSymptomImgMap(updatedImgs);
-    localStorage.setItem("addy_concerns", JSON.stringify(updatedConcerns));
-    localStorage.setItem("addy_symptom_images", JSON.stringify(updatedImgs));
+    await fetch(`/api/concerns/${item.id}`, { method: "DELETE" });
+    const res = await fetch("/api/concerns");
+    if (res.ok) {
+      const updated = await res.json();
+      setConcerns(updated);
+      const imgMap = {};
+      updated.forEach(c => { if (c.img) imgMap[c.key] = c.img; });
+      setSymptomImgMap(imgMap);
+    }
   };
 
   // --- Doctor Save / Add / Delete ---
-  const handleSaveDoctor = (e) => {
+  const handleSaveDoctor = async (e) => {
     e.preventDefault();
-    let updated;
     if (editingDoctor !== null) {
-      updated = [...doctors];
-      updated[editingDoctor] = doctorForm;
+      const doc = doctors[editingDoctor];
+      await fetch(`/api/doctors/${doc.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(doctorForm)
+      });
       setEditingDoctor(null);
     } else {
-      updated = [...doctors, doctorForm];
+      await fetch("/api/doctors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(doctorForm)
+      });
       setIsAddingDoctor(false);
     }
-    setDoctors(updated);
-    localStorage.setItem("addy_doctors", JSON.stringify(updated));
     setDoctorForm({ name: "", spec: "", exp: "", img: "", focus: "" });
+    const res = await fetch("/api/doctors");
+    if (res.ok) setDoctors(await res.json());
   };
 
   const handleStartEditDoctor = (idx) => {
@@ -1018,37 +1025,43 @@ export default function AdminDashboard() {
     setIsAddingDoctor(true);
   };
 
-  const handleDeleteDoctor = (idx) => {
+  const handleDeleteDoctor = async (idx) => {
     if (!confirm("Delete this doctor?")) return;
-    const updated = doctors.filter((_, i) => i !== idx);
-    setDoctors(updated);
-    localStorage.setItem("addy_doctors", JSON.stringify(updated));
+    const doc = doctors[idx];
+    await fetch(`/api/doctors/${doc.id}`, { method: "DELETE" });
+    const res = await fetch("/api/doctors");
+    if (res.ok) setDoctors(await res.json());
   };
 
   // --- Chatbot Rules CRUD Handlers ---
-  const handleSaveRule = (e) => {
+  const handleSaveRule = async (e) => {
     e.preventDefault();
-    let updated;
-    // Format keywords to be lowercase trimmed and split clean
     const cleanKeywords = ruleForm.keywords
       .split(",")
       .map(k => k.trim().toLowerCase())
       .filter(k => k.length > 0)
       .join(", ");
-
     const formattedRule = { ...ruleForm, keywords: cleanKeywords };
 
     if (editingRule !== null) {
-      updated = [...trainingRules];
-      updated[editingRule] = formattedRule;
+      const rule = trainingRules[editingRule];
+      await fetch(`/api/chatbot-rules/${rule.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formattedRule)
+      });
       setEditingRule(null);
     } else {
-      updated = [...trainingRules, formattedRule];
+      await fetch("/api/chatbot-rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formattedRule)
+      });
       setIsAddingRule(false);
     }
-    setTrainingRules(updated);
-    localStorage.setItem("addy_chatbot_training", JSON.stringify(updated));
     setRuleForm({ keywords: "", diagnosis: "", specialist: "General Physician", advice: "", userExample: "", botResponse: "" });
+    const res = await fetch("/api/chatbot-rules");
+    if (res.ok) setTrainingRules(await res.json());
   };
 
   const handleStartEditRule = (idx) => {
@@ -1065,18 +1078,23 @@ export default function AdminDashboard() {
     setIsAddingRule(true);
   };
 
-  const handleDeleteRule = (idx) => {
+  const handleDeleteRule = async (idx) => {
     if (!confirm("Are you sure you want to delete this chatbot rule?")) return;
-    const updated = trainingRules.filter((_, i) => i !== idx);
-    setTrainingRules(updated);
-    localStorage.setItem("addy_chatbot_training", JSON.stringify(updated));
+    const rule = trainingRules[idx];
+    await fetch(`/api/chatbot-rules/${rule.id}`, { method: "DELETE" });
+    const res = await fetch("/api/chatbot-rules");
+    if (res.ok) setTrainingRules(await res.json());
   };
 
-  const handleResetRules = () => {
+  const handleResetRules = async () => {
     if (!confirm("Are you sure you want to reset ALL chatbot training rules to defaults?")) return;
-    setTrainingRules(defaultTrainingRules);
-    localStorage.setItem("addy_chatbot_training", JSON.stringify(defaultTrainingRules));
-    localStorage.setItem("addy_chatbot_rules_version", "v4");
+    await fetch("/api/chatbot-rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reset: true })
+    });
+    const res = await fetch("/api/chatbot-rules");
+    if (res.ok) setTrainingRules(await res.json());
   };
 
   // --- Admin Live Test Chat Logic ---
@@ -1364,27 +1382,41 @@ export default function AdminDashboard() {
   };
 
   // --- Bookings queue controls ---
-  const updateBookingStatus = (id, newStatus) => {
-    const updated = bookings.map(b => (b.id === id ? { ...b, status: newStatus } : b));
-    setBookings(updated);
-    localStorage.setItem("addy_consultations", JSON.stringify(updated));
-    calculateStats(updated);
+  const updateBookingStatus = async (id, newStatus) => {
+    await fetch(`/api/bookings/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const res = await fetch("/api/bookings");
+    if (res.ok) {
+      const list = await res.json();
+      setBookings(list);
+      calculateStats(list);
+    }
   };
 
-  const deleteBooking = (id) => {
+  const deleteBooking = async (id) => {
     if (!confirm("Are you sure you want to delete this consultation log?")) return;
-    const updated = bookings.filter(b => b.id !== id);
-    setBookings(updated);
-    localStorage.setItem("addy_consultations", JSON.stringify(updated));
-    calculateStats(updated);
+    await fetch(`/api/bookings/${id}`, { method: "DELETE" });
+    const res = await fetch("/api/bookings");
+    if (res.ok) {
+      const list = await res.json();
+      setBookings(list);
+      calculateStats(list);
+    }
   };
 
-  const clearAllBookings = () => {
+  const clearAllBookings = async () => {
     if (!confirm("WARNING: This will permanently clear all outpatient booking records from the dashboard. Proceed?")) return;
-    localStorage.removeItem("addy_consultations");
+    // Delete all one by one
+    for (const b of bookings) {
+      await fetch(`/api/bookings/${b.id}`, { method: "DELETE" });
+    }
     setBookings([]);
     setStats({ total: 0, active: 0, completed: 0, syncRate: 0 });
   };
+
 
   const filteredBookings = bookings.filter(b => {
     const matchesSearch = 
