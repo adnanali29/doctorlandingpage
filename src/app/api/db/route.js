@@ -156,6 +156,13 @@ export async function GET() {
       )
     `;
 
+    // Migrate: add new columns if they don't exist yet
+    await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS assigned_doctor TEXT DEFAULT ''`;
+    await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS stage TEXT DEFAULT 'Enquiry'`;
+    await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS is_pain BOOLEAN DEFAULT FALSE`;
+    await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS remarks TEXT DEFAULT ''`;
+    await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'Unpaid'`;
+
     // Seed hero_content if empty
     const heroCount = await sql`SELECT COUNT(*) as cnt FROM hero_content`;
     if (parseInt(heroCount[0].cnt) === 0) {

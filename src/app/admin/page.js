@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 
 const keywordSynonyms = {
   "fever": ["high temperature", "warmth", "body hot", "chills", "cold", "shivering", "febrile", "running hot", "burning up", "hot forehead", "pyrexia", "temp", "temp high"],
@@ -379,6 +380,9 @@ export default function AdminDashboard() {
   const [loginId, setLoginId] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   // credentials stored in localStorage under addy_admin_credentials
   const getCredentials = () => {
@@ -434,6 +438,35 @@ export default function AdminDashboard() {
   const [bookings, setBookings] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+
+  // Lead Detail Drawer
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [leadDrawerOpen, setLeadDrawerOpen] = useState(false);
+  const [leadForm, setLeadForm] = useState({
+    assignedDoctor: "",
+    stage: "Enquiry",
+    paymentStatus: "Unpaid",
+    remarks: ""
+  });
+  const [leadSaving, setLeadSaving] = useState(false);
+  const [leadSaved, setLeadSaved] = useState(false);
+
+  const openLeadDrawer = (booking) => {
+    setSelectedLead(booking);
+    setLeadForm({
+      assignedDoctor: booking.assignedDoctor || "",
+      stage: booking.stage || "Enquiry",
+      paymentStatus: booking.paymentStatus || "Unpaid",
+      remarks: booking.remarks || ""
+    });
+    setLeadSaved(false);
+    setLeadDrawerOpen(true);
+  };
+
+  const closeLeadDrawer = () => {
+    setLeadDrawerOpen(false);
+    setTimeout(() => setSelectedLead(null), 300);
+  };
 
   // CMS States
   const [heroContent, setHeroContent] = useState({
@@ -883,14 +916,14 @@ export default function AdminDashboard() {
     }
   }, [testMessages, isTestingAnalyzing]);
 
-  const calculateStats = (list) => {
+  function calculateStats(list) {
     const total = list.length;
     const active = list.filter(b => b.status === "Active").length;
     const completed = list.filter(b => b.status === "Completed").length;
     const synced = list.filter(b => b.syncAddy).length;
     const syncRate = total > 0 ? Math.round((synced / total) * 100) : 0;
     setStats({ total, active, completed, syncRate });
-  };
+  }
 
   // --- Hero Section Save ---
   const handleSaveHero = async (e) => {
@@ -1417,6 +1450,39 @@ export default function AdminDashboard() {
     setStats({ total: 0, active: 0, completed: 0, syncRate: 0 });
   };
 
+  const saveLeadDetails = async () => {
+    if (!selectedLead) return;
+    setLeadSaving(true);
+    try {
+      await fetch(`/api/bookings/${selectedLead.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignedDoctor: leadForm.assignedDoctor,
+          stage: leadForm.stage,
+          paymentStatus: leadForm.paymentStatus,
+          remarks: leadForm.remarks
+        })
+      });
+      // Refresh bookings list
+      const res = await fetch("/api/bookings");
+      if (res.ok) {
+        const list = await res.json();
+        setBookings(list);
+        calculateStats(list);
+        // Update selectedLead with fresh data
+        const updated = list.find(b => b.id === selectedLead.id);
+        if (updated) setSelectedLead(updated);
+      }
+      setLeadSaved(true);
+      setTimeout(() => setLeadSaved(false), 2500);
+    } catch (err) {
+      console.error("Failed to save lead details", err);
+    } finally {
+      setLeadSaving(false);
+    }
+  };
+
 
   const filteredBookings = bookings.filter(b => {
     const matchesSearch = 
@@ -1463,14 +1529,33 @@ export default function AdminDashboard() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Password</label>
-                <input
-                  type="password"
-                  value={loginPass}
-                  onChange={e => setLoginPass(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                  className="w-full bg-white/10 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={loginPass}
+                    onChange={e => setLoginPass(e.target.value)}
+                    placeholder="Enter your password"
+                    required
+                    className="w-full bg-white/10 border border-white/10 text-white placeholder-slate-500 rounded-xl pl-4 pr-12 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white focus:outline-none transition-all p-1.5"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {loginError && (
@@ -1541,7 +1626,7 @@ export default function AdminDashboard() {
               <span>Logout</span>
             </button>
 
-            <a
+            <Link
               href="/"
               className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-white/5 shadow-sm"
             >
@@ -1549,7 +1634,7 @@ export default function AdminDashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               <span>Back to Clinic Site</span>
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
@@ -1686,90 +1771,217 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Patients Table */}
             <div className="bg-white border border-slate-100 rounded-[28px] shadow-sm overflow-hidden">
               {filteredBookings.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                        <th className="py-4 px-6">Patient Details</th>
-                        <th className="py-4 px-6">Metrics & Vitals</th>
-                        <th className="py-4 px-6">Assigned Specialty & Doctor</th>
-                        <th className="py-4 px-6">Fitness Sync</th>
-                        <th className="py-4 px-6">Request Date</th>
-                        <th className="py-4 px-6">Status</th>
-                        <th className="py-4 px-6 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50 text-xs font-medium text-slate-600">
-                      {filteredBookings.map((b) => (
-                        <tr key={b.id} className="hover:bg-slate-50/40 transition-colors">
-                          <td className="py-4.5 px-6">
-                            <div className="font-extrabold text-slate-900 text-sm font-poppins">{b.name}</div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">{b.phone}</div>
-                          </td>
-                          <td className="py-4.5 px-6 space-y-1">
-                            <div>Age: <strong className="text-slate-900 font-bold">{b.age} yrs</strong></div>
-                            <div className="text-[10px] text-slate-400">H: {b.height} cm | W: {b.weight} kg</div>
-                          </td>
-                          <td className="py-4.5 px-6">
-                            <div className="font-bold text-slate-900">{b.speciality}</div>
-                            <div className="text-[10px] text-brand-600 font-semibold mt-0.5">Triage Symptom: &quot;{b.symptoms}&quot;</div>
-                          </td>
-                          <td className="py-4.5 px-6">
-                            {b.syncAddy ? (
-                              <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full text-[9px] uppercase tracking-wider">
-                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                                Synced
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-400 font-bold px-2.5 py-1 rounded-full text-[9px] uppercase tracking-wider">
-                                No Sync
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-4.5 px-6 text-[10px] text-slate-400 whitespace-nowrap">{b.date}</td>
-                          <td className="py-4.5 px-6">
-                            {b.status === "Active" ? (
-                              <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-100 text-amber-700 font-extrabold px-2 py-0.5 rounded text-[10px]">Active</span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 font-extrabold px-2 py-0.5 rounded text-[10px]">Completed</span>
-                            )}
-                          </td>
-                          <td className="py-4.5 px-6 text-right">
-                            <div className="flex items-center justify-end gap-2.5">
-                              {b.status === "Active" ? (
-                                <button
-                                  onClick={() => updateBookingStatus(b.id, "Completed")}
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-sm active:scale-95 transition-all cursor-pointer"
-                                >
-                                  Complete
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => updateBookingStatus(b.id, "Active")}
-                                  className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold py-1.5 px-3 rounded-lg border border-slate-200 transition-all cursor-pointer"
-                                >
-                                  Re-open
-                                </button>
-                              )}
-                              
-                              <button
-                                onClick={() => deleteBooking(b.id)}
-                                className="bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-100 hover:border-rose-100 p-1.5 rounded-lg transition-all cursor-pointer"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          </td>
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                          <th className="py-4 px-6">Booking ID</th>
+                          <th className="py-4 px-6">Patient Details</th>
+                          <th className="py-4 px-6">Metrics &amp; Vitals</th>
+                          <th className="py-4 px-6">Assigned Specialty &amp; Doctor</th>
+                          <th className="py-4 px-6">Fitness Sync</th>
+                          <th className="py-4 px-6">Stage</th>
+                          <th className="py-4 px-6">Payment</th>
+                          <th className="py-4 px-6">Status</th>
+                          <th className="py-4 px-6 text-right">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 text-xs font-medium text-slate-600">
+                        {filteredBookings.map((b) => (
+                          <tr
+                            key={b.id}
+                            className="hover:bg-brand-50/30 transition-colors cursor-pointer group"
+                            onClick={() => openLeadDrawer(b)}
+                          >
+                            {/* Booking ID */}
+                            <td className="py-4 px-6">
+                              <span className="inline-flex items-center bg-brand-50 border border-brand-100 text-brand-700 font-black text-[10px] px-2.5 py-1 rounded-lg tracking-wide font-poppins">{b.id}</span>
+                            </td>
+                            {/* Patient */}
+                            <td className="py-4 px-6">
+                              <div className="font-extrabold text-slate-900 text-sm font-poppins">{b.name}</div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">{b.phone}</div>
+                              <div className="text-[10px] text-slate-300 mt-0.5">{b.date ? new Date(b.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}</div>
+                            </td>
+                            {/* Metrics */}
+                            <td className="py-4 px-6 space-y-1">
+                              <div>Age: <strong className="text-slate-900 font-bold">{b.age} yrs</strong></div>
+                              <div className="text-[10px] text-slate-400">H: {b.height} cm | W: {b.weight} kg</div>
+                            </td>
+                            {/* Specialty + assigned doctor */}
+                            <td className="py-4 px-6">
+                              <div className="font-bold text-slate-900">{b.speciality}</div>
+                              {b.assignedDoctor && (
+                                <div className="text-[10px] text-indigo-600 font-semibold mt-0.5">Dr: {b.assignedDoctor}</div>
+                              )}
+                              <div className="text-[10px] text-brand-600 font-semibold mt-0.5">Triage: &quot;{b.symptoms}&quot;</div>
+                            </td>
+                            {/* Sync */}
+                            <td className="py-4 px-6">
+                              {b.syncAddy ? (
+                                <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full text-[9px] uppercase tracking-wider">
+                                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                  Synced
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-400 font-bold px-2.5 py-1 rounded-full text-[9px] uppercase tracking-wider">
+                                  No Sync
+                                </span>
+                              )}
+                            </td>
+                            {/* Stage */}
+                            <td className="py-4 px-6">
+                              {b.stage === "Appointment Booked" ? (
+                                <span className="inline-flex items-center gap-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-2.5 py-1 rounded text-[9px] uppercase tracking-wider">Booked</span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 bg-slate-100 border border-slate-200 text-slate-500 font-bold px-2.5 py-1 rounded text-[9px] uppercase tracking-wider">Enquiry</span>
+                              )}
+                            </td>
+                            {/* Payment */}
+                            <td className="py-4 px-6">
+                              {b.paymentStatus === "Paid" ? (
+                                <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded text-[9px] uppercase tracking-wider">Paid</span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 bg-rose-50 border border-rose-100 text-rose-600 font-bold px-2.5 py-1 rounded text-[9px] uppercase tracking-wider">Unpaid</span>
+                              )}
+                            </td>
+                            {/* Status */}
+                            <td className="py-4 px-6">
+                              {b.status === "Active" ? (
+                                <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-100 text-amber-700 font-extrabold px-2 py-0.5 rounded text-[10px]">Active</span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 font-extrabold px-2 py-0.5 rounded text-[10px]">Completed</span>
+                              )}
+                            </td>
+                            {/* Actions — stop propagation so row click doesn't also fire */}
+                            <td className="py-4 px-6 text-right" onClick={e => e.stopPropagation()}>
+                              <div className="flex items-center justify-end gap-2.5">
+                                {b.status === "Active" ? (
+                                  <button
+                                    onClick={() => updateBookingStatus(b.id, "Completed")}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-sm active:scale-95 transition-all cursor-pointer"
+                                  >
+                                    Complete
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => updateBookingStatus(b.id, "Active")}
+                                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold py-1.5 px-3 rounded-lg border border-slate-200 transition-all cursor-pointer"
+                                  >
+                                    Re-open
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => deleteBooking(b.id)}
+                                  className="bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-100 hover:border-rose-100 p-1.5 rounded-lg transition-all cursor-pointer"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Responsive Card List for Mobile */}
+                  <div className="block md:hidden divide-y divide-slate-100">
+                    {filteredBookings.map((b) => (
+                      <div
+                        key={b.id}
+                        onClick={() => openLeadDrawer(b)}
+                        className="p-5 hover:bg-brand-50/20 active:bg-brand-50/40 transition-colors cursor-pointer space-y-3.5"
+                      >
+                        {/* Top Row: ID, status, stage */}
+                        <div className="flex items-center justify-between">
+                          <span className="bg-brand-50 border border-brand-100 text-brand-700 font-black text-[10px] px-2.5 py-1 rounded-lg font-poppins">
+                            {b.id}
+                          </span>
+                          <div className="flex gap-1.5">
+                            {b.stage === "Appointment Booked" ? (
+                              <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded text-[8px] uppercase tracking-wider">Booked</span>
+                            ) : (
+                              <span className="bg-slate-100 border border-slate-200 text-slate-500 font-bold px-2 py-0.5 rounded text-[8px] uppercase tracking-wider">Enquiry</span>
+                            )}
+                            {b.paymentStatus === "Paid" ? (
+                              <span className="bg-emerald-50 border border-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded text-[8px] uppercase tracking-wider">Paid</span>
+                            ) : (
+                              <span className="bg-rose-50 border border-rose-100 text-rose-600 font-bold px-2 py-0.5 rounded text-[8px] uppercase tracking-wider">Unpaid</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Middle block: Name, Phone */}
+                        <div>
+                          <div className="font-extrabold text-slate-900 text-base font-poppins">{b.name}</div>
+                          <div className="text-xs text-slate-500 font-medium mt-0.5">{b.phone}</div>
+                          <div className="text-[10px] text-slate-400 mt-1">
+                            {b.date ? new Date(b.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
+                          </div>
+                        </div>
+
+                        {/* Stats & Details Grid */}
+                        <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-2xl text-[11px]">
+                          <div>
+                            <div className="text-slate-400 font-black uppercase text-[8px] tracking-wider mb-0.5">Vitals</div>
+                            <div className="font-bold text-slate-700">{b.age} yrs · {b.height}cm · {b.weight}kg</div>
+                          </div>
+                          <div>
+                            <div className="text-slate-400 font-black uppercase text-[8px] tracking-wider mb-0.5">Focus</div>
+                            <div className="font-bold text-slate-700">{b.speciality}</div>
+                            {b.assignedDoctor && (
+                              <div className="text-[10px] text-indigo-600 font-bold mt-0.5">Dr: {b.assignedDoctor}</div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Triage summary */}
+                        <div className="text-xs text-slate-600 bg-brand-50/30 border border-brand-100/20 px-3.5 py-2.5 rounded-xl">
+                          <strong className="text-brand-700 font-bold block text-[9px] uppercase tracking-wider mb-0.5">Triage Symptom</strong>
+                          &quot;{b.symptoms}&quot;
+                        </div>
+
+                        {/* Bottom actions strip */}
+                        <div className="flex items-center justify-between pt-1.5" onClick={e => e.stopPropagation()}>
+                          <div className="flex gap-2">
+                            {b.status === "Active" ? (
+                              <button
+                                onClick={() => updateBookingStatus(b.id, "Completed")}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-sm active:scale-95 transition-all cursor-pointer"
+                              >
+                                Complete
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => updateBookingStatus(b.id, "Active")}
+                                className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold py-2 px-4 rounded-xl border border-slate-200 transition-all cursor-pointer"
+                              >
+                                Re-open
+                              </button>
+                            )}
+                          </div>
+                          
+                          <button
+                            onClick={() => deleteBooking(b.id)}
+                            className="bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-100 hover:border-rose-100 p-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span className="text-[10px] font-bold">Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-16 px-4">
                   <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4">
@@ -1784,6 +1996,143 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* ═══════════════ LEAD DETAIL DRAWER ═══════════════ */}
+        {/* Backdrop */}
+        <div
+          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-all duration-300 ${
+            leadDrawerOpen ? "opacity-100 visible" : "opacity-0 invisible"
+          }`}
+          onClick={closeLeadDrawer}
+        />
+        {/* Drawer Panel */}
+        <div
+          className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out ${
+            leadDrawerOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          {selectedLead && (
+            <>
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between px-4 sm:px-6 py-5 border-b border-slate-100 bg-slate-50">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="bg-brand-100 text-brand-700 text-[11px] font-black px-2.5 py-1 rounded-lg tracking-wide font-poppins">{selectedLead.id}</span>
+                    {selectedLead.status === "Active" ? (
+                      <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded">Active</span>
+                    ) : (
+                      <span className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded">Completed</span>
+                    )}
+                  </div>
+                  <h3 className="text-base font-black text-slate-900 font-poppins mt-1.5">{selectedLead.name}</h3>
+                  <p className="text-xs text-slate-400">{selectedLead.phone} · {selectedLead.speciality}</p>
+                </div>
+                <button
+                  onClick={closeLeadDrawer}
+                  className="w-9 h-9 rounded-full bg-white border border-slate-200 hover:bg-slate-100 text-slate-500 flex items-center justify-center transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Patient Summary Strip */}
+              <div className="px-4 sm:px-6 py-3 bg-slate-50 border-b border-slate-100 flex gap-4 text-[10px] text-slate-500 font-medium flex-wrap">
+                <span>Age: <strong className="text-slate-800">{selectedLead.age} yrs</strong></span>
+                <span>H: <strong className="text-slate-800">{selectedLead.height} cm</strong></span>
+                <span>W: <strong className="text-slate-800">{selectedLead.weight} kg</strong></span>
+                <span className="text-slate-500">&quot;{selectedLead.symptoms}&quot;</span>
+              </div>
+
+              {/* Form Fields */}
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6">
+
+                {/* Assign Doctor */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Assign Doctor</label>
+                  <select
+                    value={leadForm.assignedDoctor}
+                    onChange={e => setLeadForm(prev => ({ ...prev, assignedDoctor: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:outline-none transition-all"
+                  >
+                    <option value="">— Not Assigned —</option>
+                    {doctors.map(d => (
+                      <option key={d.id} value={d.name}>{d.name} ({d.spec})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Stage */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Lead Stage</label>
+                  <select
+                    value={leadForm.stage}
+                    onChange={e => setLeadForm(prev => ({ ...prev, stage: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:outline-none transition-all"
+                  >
+                    <option value="Enquiry">Enquiry</option>
+                    <option value="Appointment Booked">Appointment Booked</option>
+                  </select>
+                </div>
+
+                {/* Payment Status */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Payment Status</label>
+                  <select
+                    value={leadForm.paymentStatus}
+                    onChange={e => setLeadForm(prev => ({ ...prev, paymentStatus: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:outline-none transition-all"
+                  >
+                    <option value="Unpaid">Unpaid</option>
+                    <option value="Paid">Paid</option>
+                  </select>
+                </div>
+
+                {/* Remarks */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Remarks / Notes</label>
+                  <textarea
+                    value={leadForm.remarks}
+                    onChange={e => setLeadForm(prev => ({ ...prev, remarks: e.target.value }))}
+                    placeholder="Add clinical notes, follow-up instructions, or any remarks..."
+                    rows={4}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all resize-none text-slate-800"
+                  />
+                </div>
+              </div>
+
+              {/* Save Footer */}
+              <div className="px-4 sm:px-6 py-4 border-t border-slate-100 bg-white">
+                {leadSaved && (
+                  <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold mb-3 animate-fade-in">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Changes saved successfully!
+                  </div>
+                )}
+                <button
+                  onClick={saveLeadDetails}
+                  disabled={leadSaving}
+                  className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-brand-100 transition-all active:scale-95 text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {leadSaving ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    <>Save Lead Details</>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* ----------------- TAB 2: HERO SECTION CMS ----------------- */}
         {activeTab === "hero" && (
@@ -2611,7 +2960,7 @@ export default function AdminDashboard() {
                         <svg className="w-3.5 h-3.5 text-indigo-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
-                        ✨ Symptom Category Preset Auto-Filler
+                        Symptom Category Preset Auto-Filler
                       </label>
                       <div className="grid grid-cols-2 gap-3.5">
                         <div>
@@ -2677,7 +3026,7 @@ export default function AdminDashboard() {
                         placeholder="e.g. stomach pain, acidity, bloating, heartburn"
                         className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl px-3.5 py-2 text-xs focus:outline-none transition-all text-slate-800"
                       />
-                      <p className="text-[9px] text-slate-400 mt-1">If the patient's message contains any of these words, this rule will trigger.</p>
+                      <p className="text-[9px] text-slate-400 mt-1">If the patient&apos;s message contains any of these words, this rule will trigger.</p>
                     </div>
 
                     <div>
@@ -2827,24 +3176,60 @@ export default function AdminDashboard() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">New Password</label>
-                  <input
-                    type="password"
-                    value={settingsForm.newPass}
-                    onChange={e => setSettingsForm({ ...settingsForm, newPass: e.target.value })}
-                    placeholder="Enter new password"
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all text-slate-800"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPass ? "text" : "password"}
+                      value={settingsForm.newPass}
+                      onChange={e => setSettingsForm({ ...settingsForm, newPass: e.target.value })}
+                      placeholder="Enter new password"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl pl-4 pr-12 py-3 text-sm font-medium outline-none transition-all text-slate-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-all p-1.5"
+                    >
+                      {showNewPass ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Confirm New Password</label>
-                  <input
-                    type="password"
-                    value={settingsForm.confirmPass}
-                    onChange={e => setSettingsForm({ ...settingsForm, confirmPass: e.target.value })}
-                    placeholder="Re-enter new password"
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all text-slate-800"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPass ? "text" : "password"}
+                      value={settingsForm.confirmPass}
+                      onChange={e => setSettingsForm({ ...settingsForm, confirmPass: e.target.value })}
+                      placeholder="Re-enter new password"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl pl-4 pr-12 py-3 text-sm font-medium outline-none transition-all text-slate-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPass(!showConfirmPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-all p-1.5"
+                    >
+                      {showConfirmPass ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {settingsMsg.text && (

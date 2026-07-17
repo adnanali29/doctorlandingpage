@@ -762,7 +762,8 @@ export default function Home() {
   const [isAllSpecialitiesModalOpen, setIsAllSpecialitiesModalOpen] = useState(false);
 
   // Booking Progression
-  const [bookingStep, setBookingStep] = useState("form"); // form | loading | room
+  const [bookingStep, setBookingStep] = useState("form"); // form | loading | confirmed | room
+  const [bookingConfirmedId, setBookingConfirmedId] = useState("");
   const [telehealthMessages, setTelehealthMessages] = useState([]);
   const [telehealthInput, setTelehealthInput] = useState("");
 
@@ -979,15 +980,20 @@ export default function Home() {
 
   const closeBookingModal = () => {
     setIsBookingModalOpen(false);
+    // Reset after close animation completes
+    setTimeout(() => {
+      setBookingStep("form");
+      setBookingConfirmedId("");
+    }, 300);
   };
+
 
   const submitSimplifiedBooking = async (e) => {
     e.preventDefault();
     setBookingStep("loading");
 
-    // Save to database via API
+    // Save to database via API — server generates AFDC sequential ID
     const newBooking = {
-      id: "booking_" + Date.now(),
       name: bookingName || "Patient",
       phone: bookingPhone || "--",
       age: bookingAge || "--",
@@ -996,49 +1002,54 @@ export default function Home() {
       symptoms: bookingSymptoms || "unspecified parameters",
       speciality: bookingSpeciality,
       syncAddy: syncAddy,
-      date: new Date().toLocaleString(),
-      status: "Active"
     };
 
+    let generatedId = "";
     try {
-      await fetch("/api/bookings", {
+      const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newBooking)
       });
+      if (res.ok) {
+        const data = await res.json();
+        generatedId = data.bookingId || "";
+      }
     } catch (err) {
       console.error("Failed to save booking to DB", err);
     }
 
+    // Show thank-you confirmation screen
     setTimeout(() => {
-      setBookingStep("room");
-      const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Swastik Pattnaik";
-      
-      const initialMessages = [
-        { sender: "System", text: "Secure encrypted medical channel configured.", type: "system" },
-        { 
-          sender: "System", 
-          text: `Patient Parameters shared:\n• Name: ${bookingName || "Patient"}\n• Age: ${bookingAge || "--"} yrs | Height: ${bookingHeight || "--"} cm | Weight: ${bookingWeight || "--"} kg\n• Symptoms: "${bookingSymptoms || "unspecified parameters"}"`, 
-          type: "system" 
-        }
-      ];
+      setBookingConfirmedId(generatedId);
+      setBookingStep("confirmed");
+    }, 2000);
+  };
 
-      if (syncAddy) {
-        initialMessages.push({ 
-          sender: "System", 
-          text: "Synced physiological targets with www.addyfitness.com ecosystem", 
-          type: "sync" 
-        });
+  const proceedToTelehealth = () => {
+    setBookingStep("room");
+    const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Swastik Pattnaik";
+    const initialMessages = [
+      { sender: "System", text: "Secure encrypted medical channel configured.", type: "system" },
+      {
+        sender: "System",
+        text: `Patient Parameters shared:\n• Name: ${bookingName || "Patient"}\n• Age: ${bookingAge || "--"} yrs | Height: ${bookingHeight || "--"} cm | Weight: ${bookingWeight || "--"} kg\n• Symptoms: "${bookingSymptoms || "unspecified parameters"}"`,
+        type: "system"
       }
-
+    ];
+    if (syncAddy) {
       initialMessages.push({
-        sender: docName,
-        text: `Hello ${bookingName || "Patient"}, I have reviewed your clinical parameters. Let's begin the outpatient virtual diagnosis. Please tell me about any previous histories or recent triggers.`,
-        type: "doctor"
+        sender: "System",
+        text: "Synced physiological targets with www.addyfitness.com ecosystem",
+        type: "sync"
       });
-
-      setTelehealthMessages(initialMessages);
-    }, 3000);
+    }
+    initialMessages.push({
+      sender: docName,
+      text: `Hello ${bookingName || "Patient"}, I have reviewed your clinical parameters. Let's begin the outpatient virtual diagnosis. Please tell me about any previous histories or recent triggers.`,
+      type: "doctor"
+    });
+    setTelehealthMessages(initialMessages);
   };
 
   const sendTelehealthMessage = () => {
@@ -2396,7 +2407,7 @@ export default function Home() {
         }`}
       >
         <div
-          className={`bg-white w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-100 p-6 sm:p-8 transition-all duration-300 overflow-y-auto max-h-[90vh] scrollbar-hide ${
+          className={`bg-white w-full max-w-lg rounded-[24px] sm:rounded-[32px] shadow-2xl border border-slate-100 p-4.5 sm:p-8 transition-all duration-300 overflow-y-auto max-h-[90vh] scrollbar-hide ${
             isBookingModalOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
           }`}
         >
@@ -2566,12 +2577,71 @@ export default function Home() {
                   triage
                 </div>
               </div>
-              <h4 className="text-lg font-bold text-slate-800 font-poppins">Securing Telehealth Node...</h4>
+              <h4 className="text-lg font-bold text-slate-800 font-poppins">Confirming Booking...</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                Processing clinic billing and routing patient file to certified medical specialists...
+                Registering your consultation request and generating your booking ID...
               </p>
               <div className="text-[11px] text-indigo-600 font-bold bg-indigo-50 px-3 py-1.5 rounded-full inline-block">
-                Estimated Connection Wait: 3s
+                Estimated Wait: 2s
+              </div>
+            </div>
+          )}
+
+          {/* ── Thank-You Confirmation Screen ── */}
+          {bookingStep === "confirmed" && (
+            <div className="text-center py-8 flex flex-col items-center gap-5">
+              {/* Green check */}
+              <div className="w-20 h-20 rounded-full bg-emerald-50 border-4 border-emerald-100 flex items-center justify-center">
+                <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+
+              <div>
+                <h4 className="text-xl font-black text-slate-900 font-poppins">Booking Confirmed!</h4>
+                <p className="text-xs text-slate-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
+                  Thank you, <strong className="text-slate-800">{bookingName || "Patient"}</strong>. Your consultation request has been logged successfully.
+                </p>
+              </div>
+
+              {/* Booking ID badge */}
+              {bookingConfirmedId && (
+                <div className="bg-brand-50 border border-brand-100 rounded-2xl px-6 py-4 w-full max-w-xs">
+                  <p className="text-[10px] uppercase font-black text-brand-400 tracking-widest mb-1.5">Your Booking ID</p>
+                  <p className="text-2xl font-black text-brand-700 font-poppins tracking-wide">{bookingConfirmedId}</p>
+                  <p className="text-[10px] text-slate-400 mt-2 break-all">
+                    Reference: addyfitness.com/booking/{bookingConfirmedId}
+                  </p>
+                </div>
+              )}
+
+              {/* Info pills */}
+              <div className="flex flex-wrap justify-center gap-2 text-[10px]">
+                <span className="bg-amber-50 border border-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full">
+                  📋 Speciality: {bookingSpeciality}
+                </span>
+                <span className="bg-slate-50 border border-slate-200 text-slate-600 font-bold px-3 py-1 rounded-full">
+                  📞 {bookingPhone}
+                </span>
+              </div>
+
+              {/* CTA buttons */}
+              <div className="w-full flex flex-col gap-2.5 mt-1">
+                <button
+                  onClick={proceedToTelehealth}
+                  className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-brand-100 transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
+                >
+                  <span>Proceed to Consultation</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </button>
+                <button
+                  onClick={closeBookingModal}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 px-6 rounded-2xl transition-all text-xs"
+                >
+                  Close
+                </button>
               </div>
             </div>
           )}
