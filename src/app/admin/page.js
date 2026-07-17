@@ -1440,14 +1440,69 @@ export default function AdminDashboard() {
     }
   };
 
-  const clearAllBookings = async () => {
-    if (!confirm("WARNING: This will permanently clear all outpatient booking records from the dashboard. Proceed?")) return;
-    // Delete all one by one
-    for (const b of bookings) {
-      await fetch(`/api/bookings/${b.id}`, { method: "DELETE" });
-    }
-    setBookings([]);
-    setStats({ total: 0, active: 0, completed: 0, syncRate: 0 });
+  const exportToCSV = () => {
+    if (!bookings || bookings.length === 0) return;
+    
+    const headers = [
+      "Booking ID",
+      "Patient Name",
+      "Phone",
+      "Age",
+      "Height (cm)",
+      "Weight (kg)",
+      "Symptoms",
+      "Specialty",
+      "Sync Addy",
+      "Status",
+      "Date",
+      "Assigned Doctor",
+      "Stage",
+      "Payment Status",
+      "Remarks"
+    ];
+
+    const escapeCSV = (val) => {
+      if (val === null || val === undefined) return "";
+      let str = String(val);
+      str = str.replace(/"/g, '""');
+      if (str.includes(",") || str.includes("\n") || str.includes("\r") || str.includes('"')) {
+        return `"${str}"`;
+      }
+      return str;
+    };
+
+    const rows = bookings.map(b => [
+      b.id,
+      b.name,
+      b.phone,
+      b.age,
+      b.height,
+      b.weight,
+      b.symptoms,
+      b.speciality,
+      b.syncAddy ? "Yes" : "No",
+      b.status,
+      b.date ? new Date(b.date).toLocaleString() : "",
+      b.assignedDoctor,
+      b.stage,
+      b.paymentStatus,
+      b.remarks
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(escapeCSV).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `bookings_export_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const saveLeadDetails = async () => {
@@ -1680,13 +1735,13 @@ export default function AdminDashboard() {
               
               {bookings.length > 0 && (
                 <button
-                  onClick={clearAllBookings}
-                  className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-extrabold px-4 py-2.5 rounded-xl border border-rose-100 transition-all flex items-center gap-1.5 w-fit shadow-sm active:scale-95 cursor-pointer"
+                  onClick={exportToCSV}
+                  className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-extrabold px-4 py-2.5 rounded-xl border border-indigo-100 transition-all flex items-center gap-1.5 w-fit shadow-sm active:scale-95 cursor-pointer"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  <span>Clear Bookings History</span>
+                  <span>Export Data to Excel CSV</span>
                 </button>
               )}
             </div>
