@@ -1,0 +1,796 @@
+Created At: 2026-07-11T06:55:33Z
+Completed At: 2026-07-11T06:55:33Z
+File Path: `file:///Users/adnanali/Desktop/Doctor%20Consulation/src/app/page.js`
+Total Lines: 1733
+Total Bytes: 99153
+Showing lines 1 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: "use client";
+2: 
+3: import React, { useState, useEffect, useRef } from "react";
+4: 
+5: const concernsList = [
+6:   { name: "Cough and cold", key: "cough", specialist: "General Physician", count: "12 Doctors Online" },
+7:   { name: "Running nose", key: "nose", specialist: "General Physician", count: "12 Doctors Online" },
+8:   { name: "Fever", key: "fever", specialist: "General Physician", count: "12 Doctors Online" },
+9:   { name: "IBS & Constipation", key: "ibs", specialist: "Gastroenterologist", count: "4 Doctors Online" },
+10:   { name: "PCOS/PMOS Issue", key: "pcos", specialist: "Gynaecologist", count: "7 Doctors Online" },
+11:   { name: "Erectile dysfunction", key: "ed", specialist: "Sexologist", count: "5 Doctors Online" },
+12:   { name: "Premature Ejaculation", key: "pe", specialist: "Sexologist", count: "5 Doctors Online" },
+13:   { name: "Urine Infection", key: "uti", specialist: "General Surgeon", count: "3 Doctors Online" },
+14:   { name: "Weight Loss", key: "weight", specialist: "Endocrinologist", count: "6 Doctors Online" },
+15:   { name: "Depression or Anxiety", key: "anxiety", specialist: "Mental Health", count: "8 Doctors Online" },
+16:   { name: "Panic Attack", key: "panic", specialist: "Psychiatrist", count: "5 Doctors Online" }
+17: ];
+18: 
+19: const specialtyDoctorNames = {
+20:   "General Physician": "Dr. Marcus Vance",
+21:   "Medicine Specialist": "Dr. Evelyn Sterling",
+22:   "Sexologist": "Dr. Adrian Hayes",
+23:   "Gynaecologist": "Dr. Evelyn Sterling",
+24:   "Endocrinologist": "Dr. Adrian Hayes",
+25:   "General Surgeon": "Dr. Marcus Vance",
+26:   "Psychiatrist": "Dr. Sarah Jenkins",
+27:   "Gastroenterologist": "Dr. Marcus Vance",
+28:   "Mental Health": "Dr. Sarah Jenkins"
+29: };
+30: 
+31: export default function Home() {
+32:   // Live Clinic Stats
+33:   const [totalConsultations, setTotalConsultations] = useState(258410);
+34:   const [activeDoctors, setActiveDoctors] = useState(38);
+35:   const [averageWaitSeconds, setAverageWaitSeconds] = useState(255); // 4m 15s
+36: 
+37:   // Symptom Checker Search
+38:   const [symptomSearchQuery, setSymptomSearchQuery] = useState("");
+39: 
+40:   // FAQ Active State
+41:   const [activeFAQIndex, setActiveFAQIndex] = useState(null);
+42: 
+43:   // Booking Modal States
+44:   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+45:   const [bookingSpeciality, setBookingSpeciality] = useState("General Physician");
+46:   const [bookingName, setBookingName] = useState("");
+47:   const [bookingPhone, setBookingPhone] = useState("");
+48:   const [bookingAge, setBookingAge] = useState("");
+49:   const [bookingHeight, setBookingHeight] = useState("");
+50:   const [bookingWeight, setBookingWeight] = useState("");
+51:   const [bookingSymptoms, setBookingSymptoms] = useState("");
+52:   const [syncAddy, setSyncAddy] = useState(false);
+53:   const [isScrolled, setIsScrolled] = useState(false);
+54: 
+55:   // Booking Progression
+56:   const [bookingStep, setBookingStep] = useState("form"); // form | loading | room
+57:   const [telehealthMessages, setTelehealthMessages] = useState([]);
+58:   const [telehealthInput, setTelehealthInput] = useState("");
+59: 
+60:   // Sandbox Assistant States
+61:   const [sandboxMessages, setSandboxMessages] = useState([
+62:     {
+63:       sender: "CF",
+64:       text: "Hello! Welcome to our Sandbox. What general health concern can I assist you with tracing today? Click one of the instant selections below or type freely.",
+65:       isUser: false,
+66:     }
+67:   ]);
+68:   const [sandboxInput, setSandboxInput] = useState("");
+69:   const [isSandboxAnalyzing, setIsSandboxAnalyzing] = useState(false);
+70: 
+71:   // Refs for scroll sliders
+72:   const specialitiesSliderRef = useRef(null);
+73:   const concernsSliderRef = useRef(null);
+74:   const sandboxChatOutputRef = useRef(null);
+75:   const telehealthChatOutputRef = useRef(null);
+76: 
+77:   // Stat ticking simulation (natural fluctuations)
+78:   useEffect(() => {
+79:     const interval = setInterval(() => {
+80:       // Tick total consultations up
+81:       setTotalConsultations(prev => prev + Math.floor(Math.random() * 3));
+82: 
+83:       // Fluctuate active doctors slightly
+84:       setActiveDoctors(prev => {
+85:         const delta = Math.random() > 0.5 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+86:         const newVal = prev + delta;
+87:         return Math.max(32, Math.min(45, newVal));
+88:       });
+89: 
+90:       // Fluctuate average wait time
+91:       setAverageWaitSeconds(prev => {
+92:         const delta = Math.random() > 0.5 ? (Math.random() > 0.5 ? 4 : -4) : 0;
+93:         const newVal = prev + delta;
+94:         return Math.max(210, Math.min(290, newVal));
+95:       });
+96:     }, 4500);
+97: 
+98:     return () => clearInterval(interval);
+99:   }, []);
+100: 
+101:   // Scroll to bottom of chat windows on update
+102:   useEffect(() => {
+103:     if (sandboxChatOutputRef.current) {
+104:       sandboxChatOutputRef.current.scrollTop = sandboxChatOutputRef.current.scrollHeight;
+105:     }
+106:   }, [sandboxMessages, isSandboxAnalyzing]);
+107: 
+108:   useEffect(() => {
+109:     if (telehealthChatOutputRef.current) {
+110:       telehealthChatOutputRef.current.scrollTop = telehealthChatOutputRef.current.scrollHeight;
+111:     }
+112:   }, [telehealthMessages]);
+113: 
+114:   useEffect(() => {
+115:     const handleScroll = () => {
+116:       setIsScrolled(window.scrollY > 30);
+117:     };
+118:     window.addEventListener("scroll", handleScroll);
+119:     handleScroll();
+120:     return () => window.removeEventListener("scroll", handleScroll);
+121:   }, []);
+122: 
+123:   // Wait time string formatting
+124:   const formatWaitTime = (totalSecs) => {
+125:     const min = Math.floor(totalSecs / 60);
+126:     const sec = totalSecs % 60;
+127:     return `${min}m ${sec}s`;
+128:   };
+129: 
+130:   // Slider navigation
+131:   const scrollSlider = (sliderRef, direction) => {
+132:     if (sliderRef.current) {
+133:       const scrollAmount = direction * 310;
+134:       sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+135:     }
+136:   };
+137: 
+138:   // Filter Symptoms
+139:   const filteredConcerns = concernsList.filter(item => {
+140:     const query = symptomSearchQuery.toLowerCase().trim();
+141:     return (
+142:       item.name.toLowerCase().includes(query) ||
+143:       item.specialist.toLowerCase().includes(query)
+144:     );
+145:   });
+146: 
+147:   // Modal handlers
+148:   const openBookingModal = (speciality = "") => {
+149:     // Reset modal steps
+150:     setBookingStep("form");
+151:     setTelehealthMessages([]);
+152:     setTelehealthInput("");
+153:     
+154:     if (speciality) {
+155:       // Match mapped string in case it's compound
+156:       let matchedKey = Object.keys(specialtyDoctorNames).find(key => 
+157:         speciality.toLowerCase().includes(key.toLowerCase())
+158:       ) || "General Physician";
+159:       setBookingSpeciality(matchedKey);
+160:     }
+161:     
+162:     setIsBookingModalOpen(true);
+163:   };
+164: 
+165:   const closeBookingModal = () => {
+166:     setIsBookingModalOpen(false);
+167:   };
+168: 
+169:   const submitSimplifiedBooking = (e) => {
+170:     e.preventDefault();
+171:     setBookingStep("loading");
+172: 
+173:     setTimeout(() => {
+174:       setBookingStep("room");
+175:       const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Marcus Vance";
+176:       
+177:       const initialMessages = [
+178:         { sender: "System", text: "Secure encrypted medical channel configured.", type: "system" },
+179:         { 
+180:           sender: "System", 
+181:           text: `Patient Parameters shared:\n• Name: ${bookingName || "Patient"}\n• Age: ${bookingAge || "--"} yrs | Height: ${bookingHeight || "--"} cm | Weight: ${bookingWeight || "--"} kg\n• Symptoms: "${bookingSymptoms || "unspecified parameters"}"`, 
+182:           type: "system" 
+183:         }
+184:       ];
+185: 
+186:       if (syncAddy) {
+187:         initialMessages.push({ 
+188:           sender: "System", 
+189:           text: "Synced physiological targets with www.addyfitness.com ecosystem", 
+190:           type: "sync" 
+191:         });
+192:       }
+193: 
+194:       initialMessages.push({
+195:         sender: docName,
+196:         text: `Hello ${bookingName || "Patient"}, I have reviewed your clinical parameters. Let's begin the outpatient virtual diagnosis. Please tell me about any previous histories or recent triggers.`,
+197:         type: "doctor"
+198:       });
+199: 
+200:       setTelehealthMessages(initialMessages);
+201:     }, 3000);
+202:   };
+203: 
+204:   const sendTelehealthMessage = () => {
+205:     if (!telehealthInput.trim()) return;
+206: 
+207:     // Append patient msg
+208:     const newMsg = { sender: "Patient", text: telehealthInput.trim(), type: "patient" };
+209:     setTelehealthMessages(prev => [...prev, newMsg]);
+210:     setTelehealthInput("");
+211: 
+212:     // Simulate Doctor response
+213:     setTimeout(() => {
+214:       const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Marcus Vance";
+215:       const docMsg = {
+216:         sender: docName,
+217:         text: `Received. I am structuring your physical regimen recommendations and compiling your prescription certificate. Please click 'Draft PDF' below to generate your stamp.`,
+218:         type: "doctor"
+219:       };
+220:       setTelehealthMessages(prev => [...prev, docMsg]);
+221:     }, 1200);
+222:   };
+223: 
+224:   const handleTelehealthEnter = (e) => {
+225:     if (e.key === "Enter") {
+226:       sendTelehealthMessage();
+227:     }
+228:   };
+229: 
+230:   const simulatePrescriptionDownload = () => {
+231:     const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Marcus Vance";
+232:     const prescriptionMsg = {
+233:       sender: "System",
+234:       text: "",
+235:       type: "prescription",
+236:       details: {
+237:         patientName: bookingName || "Patient",
+238:         doctorName: docName,
+239:         speciality: bookingSpeciality,
+240:       }
+241:     };
+242:     setTelehealthMessages(prev => [...prev, prescriptionMsg]);
+243:   };
+244: 
+245:   // Sandbox Assistant Trigger
+246:   const triggerSandboxResponse = (userSymptom) => {
+247:     setIsSandboxAnalyzing(true);
+248:     
+249:     setTimeout(() => {
+250:       setIsSandboxAnalyzing(false);
+251:       let specialtyRecommendation = "General Physician";
+252:       let descriptionNote = "";
+253: 
+254:       const textLower = userSymptom.toLowerCase();
+255:       if (textLower.includes("pcos") || textLower.includes("menstrual") || textLower.includes("women")) {
+256:         specialtyRecommendation = "Gynaecologist";
+257:         descriptionNote = "Our on-call Gynaecologists evaluate ovarian metrics, cycle patterns, and provide custom treatment scripts.";
+258:       } else if (textLower.includes("ibs") || textLower.includes("constipation") || textLower.includes("acid")) {
+259:         specialtyRecommendation = "Gastroenterologist";
+260:         descriptionNote = "A Gastroenterologist is optimal to isolate enteric symptoms, microbiome issues, or custom digestive scripts.";
+261:       } else if (textLower.includes("body") || textLower.includes("fever") || textLower.includes("cold")) {
+262:         specialtyRecommendation = "General Physician";
+263:         descriptionNote = "We'll route you immediately to on-call clinical generalists for cold, viral markers, and standard care plans.";
+264:       } else if (textLower.includes("sex") || textLower.includes("intimacy") || textLower.includes("erectile")) {
+265:         specialtyRecommendation = "Sexologist";
+266:         descriptionNote = "A certified Sexology/Urology specialist is recommended. Our portal holds fully confidential 1-on-1 private rooms.";
+267:       } else if (textLower.includes("depress") || textLower.includes("anxiety") || textLower.includes("panic")) {
+268:         specialtyRecommendation = "Mental Health";
+269:         descriptionNote = "A Mental Wellness specialist can structure daily wellness guides and cognitive coping protocols.";
+270:       } else {
+271:         descriptionNote = "I can match this symptom directly to one of our MCI-licensed physicians inside the official clinic portal.";
+272:       }
+273: 
+274:       setSandboxMessages(prev => [
+275:         ...prev,
+276:         {
+277:           sender: "CF",
+278:           text: `**Triage recommendation:** ${specialtyRecommendation}.\n\n${descriptionNote}\n\nTo start a genuine consult call and get a prescription draft, click the button below:`,
+279:           isUser: false,
+280:           recommendation: specialtyRecommendation
+281:         }
+282:       ]);
+283:     }, 1200);
+284:   };
+285: 
+286:   const sendSandboxChip = (chipText) => {
+287:     setSandboxMessages(prev => [...prev, { sender: "Patient", text: chipText, isUser: true }]);
+288:     triggerSandboxResponse(chipText);
+289:   };
+290: 
+291:   const sendSandboxFreeText = () => {
+292:     if (!sandboxInput.trim()) return;
+293:     setSandboxMessages(prev => [...prev, { sender: "Patient", text: sandboxInput.trim(), isUser: true }]);
+294:     const query = sandboxInput;
+295:     setSandboxInput("");
+296:     triggerSandboxResponse(query);
+297:   };
+298: 
+299:   const handleSandboxEnter = (e) => {
+300:     if (e.key === "Enter") {
+301:       sendSandboxFreeText();
+302:     }
+303:   };
+304: 
+305:   const toggleFAQ = (idx) => {
+306:     setActiveFAQIndex(prev => (prev === idx ? null : idx));
+307:   };
+308: 
+309:   return (
+310:     <>
+311:       {/* Fixed Status Outpatient Header */}
+312:       <header className="fixed top-0 left-0 right-0 z-50 h-8 sm:h-9 bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-700 text-white flex items-center shadow-sm">
+313:         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-between">
+314:           
+315:           {/* Left: spacer to keep center/right layout balanced */}
+316:           <div></div>
+317: 
+318:           {/* Center: Live Outpatient Status Details (Hidden on Mobile) */}
+319:           <div className="hidden md:flex items-center gap-4 text-xs sm:text-sm font-semibold tracking-wide">
+320:             <div className="flex items-center gap-2 bg-black/10 px-3.5 py-2 rounded-2xl border border-white/5">
+321:               <span className="flex h-2 w-2 relative">
+322:                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+323:                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+324:               </span>
+325:               <span>
+326:                 Live Outpatient Panel: <strong className="text-emerald-300 font-bold ml-1">{activeDoctors} Doctors Active</strong>
+327:               </span>
+328:             </div>
+329:             <div className="flex items-center gap-2 bg-black/10 px-3.5 py-2 rounded-2xl border border-white/5">
+330:               <svg className="w-3.5 h-3.5 text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+331:                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+332:               </svg>
+333:               <span>
+334:                 Avg Response: <strong className="text-brand-200 font-bold ml-1">{formatWaitTime(averageWaitSeconds)}</strong>
+335:               </span>
+336:             </div>
+337:           </div>
+338: 
+339:           {/* Right: High-Contrast Consult Now CTA Button */}
+340:           <div className="flex items-center gap-3">
+341:             <button
+342:               onClick={() => openBookingModal()}
+343:               className="bg-white/95 text-brand-600 hover:bg-white font-bold px-3 py-0.5 rounded-lg shadow transition-all active:scale-95 text-[11px] tracking-wide flex items-center gap-1.5 border border-white/20 cursor-pointer"
+344:             >
+345:               <svg className="w-3 h-3 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+346:                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+347:               </svg>
+348:               <span>Consult Now</span>
+349:             </button>
+350:           </div>
+351: 
+352:         </div>
+353:       </header>
+354: 
+355:       {/* Hero Section */}
+356:       <header className="relative overflow-hidden bg-[#fbf1ee] border-b border-slate-100/50 lg:h-[520px] max-w-[1600px] mx-auto flex items-center w-full pt-10 sm:pt-12 lg:pt-16">
+357:         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-full flex items-center">
+358:           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full h-full">
+359:             {/* Left Content Area */}
+360:             <div className="lg:col-span-6 flex flex-col justify-center space-y-6 text-center lg:text-left relative z-10 py-8 lg:py-0 px-4 lg:px-6">
+361: 
+362:               <h1 className="text-4xl sm:text-5xl lg:text-[44px] font-extrabold text-slate-800 leading-[1.15] tracking-tight">
+363:                 Skip the queue. <br className="hidden sm:inline" />
+364:                 <span className="text-brand-600 font-poppins">
+365:                   Consult doctors online at home
+366:                 </span>
+367:               </h1>
+368: 
+369:               <p className="text-slate-600 text-base sm:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
+370:                 Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.
+371:               </p>
+372: 
+373:               <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+374:                 <button
+375:                   onClick={() => openBookingModal()}
+376:                   className="w-full sm:w-auto bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-brand-200 hover:shadow-brand-300 transition-all hover:-translate-y-0.5 active:translate-y-0 text-base tracking-wide flex items-center justify-center gap-3 montserrat-font"
+377:                 >
+378:                   <span>Consult Now</span>
+379:                   <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+380:                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+381:                   </svg>
+382:                 </button>
+383:                 <a
+384:                   href="#sandbox"
+385:                   className="w-full sm:w-auto flex items-center justify-center gap-2 text-slate-700 hover:text-brand-600 font-bold px-6 py-3 transition-colors text-sm border border-slate-200/80 bg-white rounded-2xl hover:bg-slate-50 shadow-sm"
+386:                 >
+387:                   <span>Try Free Live Chat Demo</span>
+388:                 </a>
+389:               </div>
+390: 
+391:               {/* Live Stats Dynamic Grid */}
+392:               <div className="grid grid-cols-3 gap-6 pt-4 border-t border-slate-200/60 max-w-md mx-auto lg:mx-0">
+393:                 <div>
+394:                   <span className="block text-xl sm:text-2xl font-extrabold text-slate-800">
+395:                     {Math.floor(averageWaitSeconds / 60)}m
+396:                   </span>
+397:                   <span className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">
+398:                     Average Wait
+399:                   </span>
+400:                 </div>
+401:                 <div className="border-x border-slate-200/60 px-4">
+402:                   <span className="block text-xl sm:text-2xl font-extrabold text-slate-800">
+403:                     {totalConsultations.toLocaleString()}
+404:                   </span>
+405:                   <span className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">
+406:                     Sessions Done
+407:                   </span>
+408:                 </div>
+409:                 <div>
+410:                   <span className="block text-xl sm:text-2xl font-extrabold text-slate-800">4.96★</span>
+411:                   <span className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">
+412:                     Clarity Score
+413:                   </span>
+414:                 </div>
+415:               </div>
+416:             </div>
+417: 
+418:             {/* Right Graphics Area (Image of Woman on Couch) */}
+419:             <div className="lg:col-span-6 w-full h-[280px] lg:h-full relative flex items-center justify-center overflow-hidden">
+420:               <img
+421:                 src="/hero_banner.png"
+422:                 alt="Online Doctor Consultation at Home"
+423:                 className="w-full h-full object-cover object-right"
+424:               />
+425:             </div>
+426:           </div>
+427:         </div>
+428:       </header>
+429: 
+430:       {/* Specialities Panel */}
+431:       <section id="specialities" className="py-24 bg-white relative">
+432:         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+433:           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+434:             <div>
+435:               <span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+436:                 Medical Council Specialties
+437:               </span>
+438:               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+439:                 Consult Verified Specialists
+440:               </h2>
+441:               <p className="text-slate-500 mt-2 max-w-xl text-sm sm:text-base">
+442:                 Meticulously selected doctors offering immediate 1-on-1 virtual appointments across crucial health realms.
+443:               </p>
+444:             </div>
+445:             {/* Control Buttons */}
+446:             <div className="flex gap-2.5 mt-4 md:mt-0">
+447:               <button
+448:                 onClick={() => scrollSlider(specialitiesSliderRef, -1)}
+449:                 className="w-12 h-12 rounded-full border border-slate-200 hover:border-brand-500 hover:bg-brand-50 text-slate-600 hover:text-brand-600 flex items-center justify-center transition-all focus:outline-none shadow-sm active:scale-95"
+450:                 aria-label="Previous"
+451:               >
+452:                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+453:                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+454:                 </svg>
+455:               </button>
+456:               <button
+457:                 onClick={() => scrollSlider(specialitiesSliderRef, 1)}
+458:                 className="w-12 h-12 rounded-full border border-slate-200 hover:border-brand-500 hover:bg-brand-50 text-slate-600 hover:text-brand-600 flex items-center justify-center transition-all focus:outline-none shadow-sm active:scale-95"
+459:                 aria-label="Next"
+460:               >
+461:                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+462:                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+463:                 </svg>
+464:               </button>
+465:             </div>
+466:           </div>
+467: 
+468:           {/* Scrollable Cards Container */}
+469:           <div
+470:             ref={specialitiesSliderRef}
+471:             className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6"
+472:           >
+473:             {/* Cards definitions */}
+474:             {[
+475:               { title: "General Physician", desc: "Fever, cough, metabolic issues, routine diagnoses", fee: "₹699", icon: "shield" },
+476:               { title: "Medicine Specialist", desc: "Internal organ therapy, chronic disease plans", fee: "₹699", icon: "beaker" },
+477:               { title: "Sexologist", desc: "Confidential therapy, private relationship support", fee: "₹699", icon: "heart" },
+478:               { title: "Gynaecologist", desc: "Menstruation parameters, maternal and PCOS advice", fee: "₹699", icon: "user-group" },
+479:               { title: "Endocrinologist", desc: "Thyroid diagnostics, hormone optimization plans", fee: "₹699", icon: "arrow-trending-up" },
+480:               { title: "General Surgeon", desc: "Post-op counseling, minor outpatient assessment", fee: "₹699", icon: "scissors" },
+481:               { title: "Psychiatrist", desc: "Mental diagnoses, emotional therapy support", fee: "₹699", icon: "bolt" },
+482:               { title: "Gastroenterologist", desc: "Severe acidity, IBS, gut microbiome tracking", fee: "₹699", icon: "clipboard" },
+483:               { title: "Mental Health", desc: "Daily counseling, anxiety reduction frameworks", fee: "₹799", tag: "PREMIUM", icon: "face-smile" }
+484:             ].map((spec, i) => {
+485:               const displayTitle = {
+486:                 "General Physician": "General Physician",
+487:                 "Medicine Specialist": "Internal Medicine",
+488:                 "Sexologist": "Sexology",
+489:                 "Gynaecologist": "Gynaecology",
+490:                 "Endocrinologist": "Endocrinology",
+491:                 "General Surgeon": "General Surgery",
+492:                 "Psychiatrist": "Psychiatry",
+493:                 "Gastroenterologist": "Gastroenterology",
+494:                 "Mental Health": "Mental Health"
+495:               }[spec.title] || spec.title;
+496: 
+497:               return (
+498:                 <div
+499:                   key={i}
+500:                   onClick={() => openBookingModal(spec.title)}
+501:                   className="flex-shrink-0 w-[280px] bg-white border border-slate-200 rounded-3xl p-6 shadow-[0_4px_24px_0_rgba(148,163,184,0.18)] hover:shadow-[0_8px_32px_0_rgba(148,163,184,0.28)] hover:border-slate-300 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer flex flex-col items-center text-center"
+502:                 >
+503:                   <div className={`w-32 h-32 rounded-full flex items-center justify-center mb-6 group-hover:scale-105 transition-transform shadow-inner ${
+504:                     spec.title === "Sexologist" ? "bg-pink-50 text-pink-500" :
+505:                     spec.title === "Gynaecologist" ? "bg-[#d2e3f5] text-[#2b6cb0]" :
+506:                     spec.title === "Medicine Specialist" ? "bg-indigo-50 text-indigo-500" :
+507:                     spec.title === "Endocrinologist" ? "bg-amber-50 text-amber-500" :
+508:                     spec.title === "General Surgeon" ? "bg-purple-50 text-purple-500" :
+509:                     spec.title === "Psychiatrist" ? "bg-red-50 text-red-500" :
+510:                     spec.title === "Gastroenterologist" ? "bg-teal-50 text-teal-500" :
+511:                     spec.title === "Mental Health" ? "bg-cyan-50 text-cyan-500" : "bg-brand-50 text-brand-500"
+512:                   }`}>
+513:                     {spec.icon === "shield" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>}
+514:                     {spec.icon === "beaker" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>}
+515:                     {spec.icon === "heart" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>}
+516:                     {spec.icon === "user-group" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>}
+517:                     {spec.icon === "arrow-trending-up" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"/></svg>}
+518:                     {spec.icon === "scissors" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"/></svg>}
+519:                     {spec.icon === "bolt" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>}
+520:                     {spec.icon === "clipboard" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>}
+521:                     {spec.icon === "face-smile" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+522:                   </div>
+523:                   
+524:                   {/* Centered Title */}
+525:                   <h3 className="text-[17px] font-bold text-slate-800 font-poppins mb-1 tracking-tight">
+526:                     {displayTitle}
+527:                   </h3>
+528: 
+529:                   {/* Centered Description */}
+530:                   <p className="text-xs text-slate-400 font-medium mb-3 px-2 leading-relaxed">
+531:                     {spec.desc}
+532:                   </p>
+533:                   
+534:                   {/* Centered Price */}
+535:                   <p className="text-slate-500 text-sm font-semibold mb-5 font-dmsans">
+536:                     {spec.fee}
+537:                   </p>
+538: 
+539:                   {/* 2 CTA Buttons */}
+540:                   <div className="grid grid-cols-2 gap-2.5 w-full mt-auto">
+541:                     <button
+542:                       onClick={(e) => {
+543:                         e.stopPropagation();
+544:                         openBookingModal(spec.title);
+545:                       }}
+546:                       className="bg-brand-600 hover:bg-brand-700 text-white text-[11px] font-bold py-2.5 px-1 rounded-xl transition-all shadow-sm active:scale-95 text-center whitespace-nowrap"
+547:                     >
+548:                       Consult now
+549:                     </button>
+550:                     <button
+551:                       onClick={(e) => {
+552:                         e.stopPropagation();
+553:                         openBookingModal(spec.title);
+554:                       }}
+555:                       className="border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-bold py-2.5 px-1 rounded-xl transition-all active:scale-95 text-center whitespace-nowrap"
+556:                     >
+557:                       Consult later
+558:                     </button>
+559:                   </div>
+560:                 </div>
+561:               );
+562:             })}
+563:           </div>
+564:         </div>
+565:       </section>
+566: 
+567:       {/* Concerns Panel */}
+568:       <section id="concerns" className="py-24 bg-[#fafcfe] border-y border-slate-100/80 relative overflow-hidden">
+569:         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+570:           <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-6">
+571:             <div>
+572:               <span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+573:                 Live Symptom Matching
+574:               </span>
+575:               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+576:                 Identify Your Clinical Symptoms
+577:               </h2>
+578:               <p className="text-slate-500 mt-2 max-w-xl text-sm sm:text-base">
+579:                 Search or click common issues to seamlessly trigger the correct medical specialist matching engine.
+580:               </p>
+581:             </div>
+582: 
+583:             {/* Search Input */}
+584:             <div className="w-full lg:max-w-md relative">
+585:               <div className="relative">
+586:                 <input
+587:                   type="text"
+588:                   value={symptomSearchQuery}
+589:                   onChange={(e) => setSymptomSearchQuery(e.target.value)}
+590:                   placeholder="Type symptom (e.g., Fever, Cough, PCOS)..."
+591:                   className="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 rounded-2xl px-5 py-3.5 pl-12 text-sm focus:outline-none shadow-sm transition-all text-slate-800"
+592:                 />
+593:                 <svg className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+594:                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+595:                 </svg>
+596:               </div>
+597:             </div>
+598:           </div>
+599: 
+600:           {/* Grid Container */}
+601:           {filteredConcerns.length > 0 ? (
+602:             <div
+603:               ref={concernsSliderRef}
+604:               className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6"
+605:             >
+606:               {filteredConcerns.map((c, idx) => (
+607:                 <div
+608:                   key={idx}
+609:                   className="symptom-card flex-shrink-0 w-80 bg-white border border-slate-100 rounded-[28px] p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between snap-start"
+610:                 >
+611:                   <div>
+612:                     {/* Placeholder image representation */}
+613:                     <div className="w-full h-36 bg-brand-50 rounded-2xl overflow-hidden mb-4 relative flex items-center justify-center border border-brand-100/55 group/img">
+614:                       <img
+615:                         src={`https://placehold.co/400x250/e0f2fe/075985?text=${encodeURIComponent(c.name)}`}
+616:                         alt={c.name}
+617:                         className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+618:                       />
+619:                       <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm text-[8px] text-slate-500 px-2 py-0.5 rounded font-mono font-bold tracking-wider border border-slate-100 shadow-sm uppercase">
+620:                         Replace Asset
+621:                       </div>
+622:                     </div>
+623: 
+624:                     <div className="flex items-center justify-between mb-2">
+625:                       <h3 className="text-base font-bold text-slate-800 font-poppins">{c.name}</h3>
+626:                       <span className="text-[9px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg whitespace-nowrap shrink-0">
+627:                         {c.count}
+628:                       </span>
+629:                     </div>
+630:                     <p className="text-xs text-brand-600 font-semibold mb-4">Recommended: {c.specialist}</p>
+631:                   </div>
+632: 
+633:                   <div className="grid grid-cols-2 gap-3 mt-2 border-t border-slate-100 pt-4">
+634:                     <button
+635:                       onClick={() => openBookingModal(c.specialist)}
+636:                       className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-xs font-bold py-3 px-4 rounded-xl transition-all shadow-md shadow-brand-100 active:scale-95"
+637:                     >
+638:                       Consult
+639:                     </button>
+640:                     <a
+641:                       href={`https://wa.me/1234567890?text=Hi%20Addy%20Fitness,%20I%20am%20facing%20${encodeURIComponent(c.name)}%20and%20would%20like%20to%20connect%20with%20a%20doctor.`}
+642:                       target="_blank"
+643:                       rel="noopener noreferrer"
+644:                       className="border border-emerald-100 bg-emerald-50/55 hover:bg-emerald-50 text-emerald-800 text-xs font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 active:scale-95"
+645:                     >
+646:                       <svg className="w-3.5 h-3.5 fill-emerald-600" viewBox="0 0 24 24">
+647:                         <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.864-9.83.002-2.623-1.023-5.09-2.885-6.953C16.588 1.958 14.117 1.15 11.99 1.15c-5.438 0-9.863 4.414-9.867 9.831-.001 1.841.488 3.639 1.417 5.223l-1.01 3.693 3.79-1.011zm13.102-7.493c-.301-.151-1.78-.879-2.056-.979-.275-.1-.475-.151-.675.151-.2.301-.775.979-.95 1.18-.175.201-.35.226-.651.075-1.127-.565-1.957-.965-2.731-2.292-.612-1.05-.192-1.613-.08-1.77.103-.141.226-.271.328-.393.101-.122.151-.202.226-.352.075-.15.038-.276-.019-.376-.056-.1-.475-1.144-.651-1.564-.171-.41-.344-.354-.475-.36l-.403-.008c-.141 0-.366.052-.558.261-.192.21-.734.717-.734 1.748 0 1.031.75 2.028.854 2.167.104.139 1.478 2.257 3.58 3.167.5.216.89.345 1.196.443.502.16 1.06.131 1.461.071.447-.066 1.385-.566 1.58-.112.195.454.195.842.14 1.011-.055.169-.2.301-.501.452z" />
+648:                       </svg>
+649:                       <span>WhatsApp</span>
+650:                     </a>
+651:                   </div>
+652:                 </div>
+653:               ))}
+654:             </div>
+655:           ) : (
+656:             <p className="text-center text-slate-400 py-12 font-medium">
+657:               No symptoms match your search. Try searching for "Fever", "Cough", "PCOS", or connect directly to a General Physician.
+658:             </p>
+659:           )}
+660:         </div>
+661:       </section>
+662: 
+663:       {/* Why Trust Us Section */}
+664:       <section id="why-trust-us" className="py-24 bg-white relative overflow-hidden">
+665:         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+666:           <div className="text-center max-w-2xl mx-auto mb-16">
+667:             <span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+668:               Our Quality Standard
+669:             </span>
+670:             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+671:               Why Patients Trust Addy Fitness
+672:             </h2>
+673:             <p className="text-slate-500 mt-2 text-sm sm:text-base">
+674:               Pioneering safe, encrypted digital diagnostics tied directly with legal medical compliance protocols.
+675:             </p>
+676:           </div>
+677: 
+678:           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+679:             {/* Trust Card 1 */}
+680:             <div className="bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1">
+681:               <div className="w-12 h-12 bg-blue-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+682:                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+683:                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+684:                 </svg>
+685:               </div>
+686:               <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">Confidential 1 on 1</h3>
+687:               <p className="text-xs text-slate-500 leading-relaxed">
+688:                 Encrypted high-definition channels keeping medical history strictly confidential between provider and patient.
+689:               </p>
+690:             </div>
+691: 
+692:             {/* Trust Card 2 */}
+693:             <div className="bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1">
+694:               <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+695:                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+696:                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+697:                 </svg>
+698:               </div>
+699:               <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">Digital Prescription</h3>
+700:               <p className="text-xs text-slate-500 leading-relaxed">
+701:                 Instantly download legal e-prescriptions with verified doctor digital stamps accepted at all major pharmacies.
+702:               </p>
+703:             </div>
+704: 
+705:             {/* Trust Card 3 */}
+706:             <div className="bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1">
+707:               <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+708:                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+709:                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+710:                 </svg>
+711:               </div>
+712:               <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">98% Clear Rating</h3>
+713:               <p className="text-xs text-slate-500 leading-relaxed">
+714:                 Top clarity scoring where doctors explain diagnostics clearly without complex clinical medical jargon.
+715:               </p>
+716:             </div>
+717: 
+718:             {/* Trust Card 4 */}
+719:             <div className="bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1">
+720:               <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+721:                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+722:                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+723:                 </svg>
+724:               </div>
+725:               <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">Instant Prescription</h3>
+726:               <p className="text-xs text-slate-500 leading-relaxed">
+727:                 No clinic travel time or delays. Connect, get examined, and receive help in less than 10 minutes.
+728:               </p>
+729:             </div>
+730: 
+731:             {/* Trust Card 5 (AddyFitness Segment) */}
+732:             <div className="bg-gradient-to-tr from-[#0284c7] to-[#4338ca] border border-brand-400 rounded-[28px] p-6 text-white shadow-xl hover:shadow-brand-200/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group flex flex-col justify-between">
+733:               <div className="absolute -right-8 -bottom-8 w-28 h-28 bg-white/10 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
+734:               <div>
+735:                 <div className="flex justify-between items-start mb-6">
+736:                   <div className="w-10 h-10 bg-white/15 text-white rounded-2xl flex items-center justify-center">
+737:                     <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+738:                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3.05 11H5M19 11h1.95M12 3v18M12 3l3 3m-3-3L9 6m3 15l3-3m-3 3l-3-3" />
+739:                     </svg>
+740:                   </div>
+741:                   <div className="flex items-center gap-1 bg-emerald-500/80 px-2 py-0.5 rounded text-[9px] font-bold">
+742:                     <span>74 bpm</span>
+743:                   </div>
+744:                 </div>
+745:                 <h3 className="text-base font-bold font-poppins mb-1.5">AddyFitness Sync</h3>
+746:                 <p className="text-[11px] text-slate-100 leading-relaxed font-normal">
+747:                   Coordinated therapeutic routines linking physical therapy and diet alongside prescription metrics with{" "}
+748:                   <span className="underline">www.addyfitness.com</span>.
+749:                 </p>
+750:               </div>
+751:               <a
+752:                 href="https://www.addyfitness.com"
+753:                 target="_blank"
+754:                 rel="noopener noreferrer"
+755:                 className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider bg-white text-indigo-700 px-4 py-2 rounded-xl hover:bg-indigo-50 transition-all mt-4 self-start shadow-md z-10"
+756:               >
+757:                 <span>Sync Fitness</span>
+758:                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+759:                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+760:                 </svg>
+761:               </a>
+762:             </div>
+763:           </div>
+764:         </div>
+765:       </section>
+766: 
+767:       {/* Medical Council Section */}
+768:       <section id="doctors" className="py-24 bg-slate-50 relative">
+769:         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+770:           <div className="text-center max-w-2xl mx-auto mb-16">
+771:             <span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+772:               Our Digital Council
+773:             </span>
+774:             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+775:               Meet Active Registered Doctors
+776:             </h2>
+777:             <p className="text-slate-500 mt-2 text-sm sm:text-base">
+778:               Each panelist maintains a pristine license registration and years of dedicated clinical expertise.
+779:             </p>
+780:           </div>
+781: 
+782:           {/* Doctor Grid */}
+783:           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+784:             {[
+785:               { name: "Dr. Marcus Vance", spec: "Physiology & General", exp: "12+ Years Experience", img: "Dr.+Marcus", gradient: "from-brand-500 to-indigo-400", focus: "General Physician" },
+786:               { name: "Dr. Evelyn Sterling", spec: "Gynaecologist", e
+<truncated 1598 bytes>
+
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.

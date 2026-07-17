@@ -1,0 +1,1820 @@
+const config = {
+plugins: {
+"@tailwindcss/postcss": {},
+},
+};
+
+export default config;
+
+{ name: "IBS & Constipation", key: "ibs", specialist: "Gastroenterologist", count: "4 Doctors Online" },
+{ name: "PCOS/PMOS Issue", key: "pcos", specialist: "Gynaecologist", count: "7 Doctors Online" },
+{ name: "Erectile dysfunction", key: "ed", specialist: "Sexologist", count: "5 Doctors Online" },
+{ name: "Premature Ejaculation", key: "pe", specialist: "Sexologist", count: "5 Doctors Online" },
+{ name: "Urine Infection", key: "uti", specialist: "General Surgeon", count: "3 Doctors Online" },
+{ name: "Weight Loss", key: "weight", specialist: "Endocrinologist", count: "6 Doctors Online" },
+{ name: "Depression or Anxiety", key: "anxiety", specialist: "Mental Health", count: "8 Doctors Online" },
+{ name: "Panic Attack", key: "panic", specialist: "Psychiatrist", count: "5 Doctors Online" }
+];
+
+const specialtyDoctorNames = {
+"General Physician": "Dr. Marcus Vance",
+"Medicine Specialist": "Dr. Evelyn Sterling",
+"Sexologist": "Dr. Adrian Hayes",
+"Gynaecologist": "Dr. Evelyn Sterling",
+"Endocrinologist": "Dr. Adrian Hayes",
+"General Surgeon": "Dr. Marcus Vance",
+"Psychiatrist": "Dr. Sarah Jenkins",
+"Gastroenterologist": "Dr. Marcus Vance",
+"Mental Health": "Dr. Sarah Jenkins"
+};
+
+export default function Home() {
+// Live Clinic Stats
+const [totalConsultations, setTotalConsultations] = useState(258410);
+const [activeDoctors, setActiveDoctors] = useState(38);
+const [averageWaitSeconds, setAverageWaitSeconds] = useState(255); // 4m 15s
+
+// Symptom Checker Search
+const [symptomSearchQuery, setSymptomSearchQuery] = useState("");
+
+// FAQ Active State
+const [activeFAQIndex, setActiveFAQIndex] = useState(null);
+
+// Booking Modal States
+const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+const [bookingSpeciality, setBookingSpeciality] = useState("General Physician");
+const [bookingName, setBookingName] = useState("");
+const [bookingPhone, setBookingPhone] = useState("");
+const [bookingAge, setBookingAge] = useState("");
+const [bookingHeight, setBookingHeight] = useState("");
+const [bookingWeight, setBookingWeight] = useState("");
+const [bookingSymptoms, setBookingSymptoms] = useState("");
+const [syncAddy, setSyncAddy] = useState(false);
+const [isScrolled, setIsScrolled] = useState(false);
+const [isChatOpen, setIsChatOpen] = useState(false);
+
+// Booking Progression
+const [bookingStep, setBookingStep] = useState("form"); // form | loading | room
+const [telehealthMessages, setTelehealthMessages] = useState([]);
+const [telehealthInput, setTelehealthInput] = useState("");
+
+// Sandbox Assistant States
+const [sandboxMessages, setSandboxMessages] = useState([
+{
+sender: "CF",
+text: "Hello! Welcome to our Sandbox. What general health concern can I assist you with tracing today? Click one of the instant selections below or type freely.",
+isUser: false,
+}
+]);
+const [sandboxInput, setSandboxInput] = useState("");
+const [isSandboxAnalyzing, setIsSandboxAnalyzing] = useState(false);
+
+// Refs for scroll sliders
+const specialitiesSliderRef = useRef(null);
+const concernsSliderRef = useRef(null);
+const sandboxChatOutputRef = useRef(null);
+const telehealthChatOutputRef = useRef(null);
+
+// Stat ticking simulation (natural fluctuations)
+useEffect(() => {
+const interval = setInterval(() => {
+// Tick total consultations up
+setTotalConsultations(prev => prev + Math.floor(Math.random() * 3));
+
+// Fluctuate active doctors slightly
+setActiveDoctors(prev => {
+const delta = Math.random() > 0.5 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+const newVal = prev + delta;
+return Math.max(32, Math.min(45, newVal));
+});
+
+// Fluctuate average wait time
+setAverageWaitSeconds(prev => {
+const delta = Math.random() > 0.5 ? (Math.random() > 0.5 ? 4 : -4) : 0;
+const newVal = prev + delta;
+return Math.max(210, Math.min(290, newVal));
+});
+}, 4500);
+
+return () => clearInterval(interval);
+}, []);
+
+// Scroll to bottom of chat windows on update
+useEffect(() => {
+if (sandboxChatOutputRef.current) {
+sandboxChatOutputRef.current.scrollTop = sandboxChatOutputRef.current.scrollHeight;
+}
+}, [sandboxMessages, isSandboxAnalyzing]);
+
+useEffect(() => {
+if (telehealthChatOutputRef.current) {
+telehealthChatOutputRef.current.scrollTop = telehealthChatOutputRef.current.scrollHeight;
+}
+}, [telehealthMessages]);
+
+useEffect(() => {
+const handleScroll = () => {
+setIsScrolled(window.scrollY > 30);
+};
+window.addEventListener("scroll", handleScroll);
+handleScroll();
+return () => window.removeEventListener("scroll", handleScroll);
+}, []);
+
+// Wait time string formatting
+const formatWaitTime = (totalSecs) => {
+const min = Math.floor(totalSecs / 60);
+const sec = totalSecs % 60;
+return `${min}m ${sec}s`;
+};
+
+// Slider navigation
+const scrollSlider = (sliderRef, direction) => {
+if (sliderRef.current) {
+const scrollAmount = direction * 310;
+sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+}
+};
+
+// Filter Symptoms
+const filteredConcerns = concernsList.filter(item => {
+const query = symptomSearchQuery.toLowerCase().trim();
+return (
+item.name.toLowerCase().includes(query) ||
+item.specialist.toLowerCase().includes(query)
+);
+});
+
+// Modal handlers
+const openBookingModal = (speciality = "") => {
+// Reset modal steps
+setBookingStep("form");
+setTelehealthMessages([]);
+setTelehealthInput("");
+
+if (speciality) {
+// Match mapped string in case it's compound
+let matchedKey = Object.keys(specialtyDoctorNames).find(key => 
+speciality.toLowerCase().includes(key.toLowerCase())
+) || "General Physician";
+setBookingSpeciality(matchedKey);
+}
+
+setIsBookingModalOpen(true);
+};
+
+const closeBookingModal = () => {
+setIsBookingModalOpen(false);
+};
+
+const submitSimplifiedBooking = (e) => {
+e.preventDefault();
+setBookingStep("loading");
+
+setTimeout(() => {
+setBookingStep("room");
+const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Marcus Vance";
+
+const initialMessages = [
+{ sender: "System", text: "Secure encrypted medical channel configured.", type: "system" },
+{ 
+sender: "System", 
+text: `Patient Parameters shared:\n• Name: ${bookingName || "Patient"}\n• Age: ${bookingAge || "--"} yrs | Height: ${bookingHeight || "--"} cm | Weight: ${bookingWeight || "--"} kg\n• Symptoms: "${bookingSymptoms || "unspecified parameters"}"`, 
+type: "system" 
+}
+];
+
+if (syncAddy) {
+initialMessages.push({ 
+sender: "System", 
+text: "Synced physiological targets with www.addyfitness.com ecosystem", 
+type: "sync" 
+});
+}
+
+initialMessages.push({
+sender: docName,
+text: `Hello ${bookingName || "Patient"}, I have reviewed your clinical parameters. Let's begin the outpatient virtual diagnosis. Please tell me about any previous histories or recent triggers.`,
+type: "doctor"
+});
+
+setTelehealthMessages(initialMessages);
+}, 3000);
+};
+
+const sendTelehealthMessage = () => {
+if (!telehealthInput.trim()) return;
+
+// Append patient msg
+const newMsg = { sender: "Patient", text: telehealthInput.trim(), type: "patient" };
+setTelehealthMessages(prev => [...prev, newMsg]);
+setTelehealthInput("");
+
+// Simulate Doctor response
+setTimeout(() => {
+const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Marcus Vance";
+const docMsg = {
+sender: docName,
+text: `Received. I am structuring your physical regimen recommendations and compiling your prescription certificate. Please click 'Draft PDF' below to generate your stamp.`,
+type: "doctor"
+};
+setTelehealthMessages(prev => [...prev, docMsg]);
+}, 1200);
+};
+
+const handleTelehealthEnter = (e) => {
+if (e.key === "Enter") {
+sendTelehealthMessage();
+}
+};
+
+const simulatePrescriptionDownload = () => {
+const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Marcus Vance";
+const prescriptionMsg = {
+sender: "System",
+text: "",
+type: "prescription",
+details: {
+patientName: bookingName || "Patient",
+doctorName: docName,
+speciality: bookingSpeciality,
+}
+};
+setTelehealthMessages(prev => [...prev, prescriptionMsg]);
+};
+
+// Sandbox Assistant Trigger
+const triggerSandboxResponse = (userSymptom) => {
+setIsSandboxAnalyzing(true);
+
+setTimeout(() => {
+setIsSandboxAnalyzing(false);
+let specialtyRecommendation = "General Physician";
+let descriptionNote = "";
+
+const textLower = userSymptom.toLowerCase();
+if (textLower.includes("pcos") || textLower.includes("menstrual") || textLower.includes("women")) {
+specialtyRecommendation = "Gynaecologist";
+descriptionNote = "Our on-call Gynaecologists evaluate ovarian metrics, cycle patterns, and provide custom treatment scripts.";
+} else if (textLower.includes("ibs") || textLower.includes("constipation") || textLower.includes("acid")) {
+specialtyRecommendation = "Gastroenterologist";
+descriptionNote = "A Gastroenterologist is optimal to isolate enteric symptoms, microbiome issues, or custom digestive scripts.";
+} else if (textLower.includes("body") || textLower.includes("fever") || textLower.includes("cold")) {
+specialtyRecommendation = "General Physician";
+descriptionNote = "We'll route you immediately to on-call clinical generalists for cold, viral markers, and standard care plans.";
+} else if (textLower.includes("sex") || textLower.includes("intimacy") || textLower.includes("erectile")) {
+specialtyRecommendation = "Sexologist";
+descriptionNote = "A certified Sexology/Urology specialist is recommended. Our portal holds fully confidential 1-on-1 private rooms.";
+} else if (textLower.includes("depress") || textLower.includes("anxiety") || textLower.includes("panic")) {
+specialtyRecommendation = "Mental Health";
+descriptionNote = "A Mental Wellness specialist can structure daily wellness guides and cognitive coping protocols.";
+} else {
+descriptionNote = "I can match this symptom directly to one of our MCI-licensed physicians inside the official clinic portal.";
+}
+
+setSandboxMessages(prev => [
+...prev,
+{
+sender: "CF",
+text: `**Triage recommendation:** ${specialtyRecommendation}.\n\n${descriptionNote}\n\nTo start a genuine consult call and get a prescription draft, click the button below:`,
+isUser: false,
+recommendation: specialtyRecommendation
+}
+]);
+}, 1200);
+};
+
+const sendSandboxChip = (chipText) => {
+setSandboxMessages(prev => [...prev, { sender: "Patient", text: chipText, isUser: true }]);
+triggerSandboxResponse(chipText);
+};
+
+const sendSandboxFreeText = () => {
+if (!sandboxInput.trim()) return;
+setSandboxMessages(prev => [...prev, { sender: "Patient", text: sandboxInput.trim(), isUser: true }]);
+const query = sandboxInput;
+setSandboxInput("");
+triggerSandboxResponse(query);
+};
+
+const handleSandboxEnter = (e) => {
+if (e.key === "Enter") {
+sendSandboxFreeText();
+}
+};
+
+const toggleFAQ = (idx) => {
+setActiveFAQIndex(prev => (prev === idx ? null : idx));
+};
+
+return (
+<>
+{/* Fixed Status Outpatient Header (Refined for alignment and mobile responsiveness) */}
+<header className="fixed top-0 left-0 right-0 z-50 py-1.5 sm:py-2 bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-700 text-white flex items-center shadow-md border-b border-white/5">
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-between gap-4">
+
+{/* Left: Compact Live Indicator (Visible on Mobile) */}
+<div className="flex items-center gap-2 bg-white/10 px-2.5 py-1 rounded-full border border-white/5 text-[10px] sm:text-xs font-semibold">
+<span className="flex h-1.5 w-1.5 relative">
+<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+</span>
+<span>
+<span className="hidden sm:inline">Live Outpatient:</span> <strong className="text-emerald-300 font-bold">{activeDoctors} Doctors Active</strong>
+</span>
+</div>
+
+{/* Center: Live Response Time (Hidden on Mobile) */}
+<div className="hidden md:flex items-center gap-2 bg-white/10 px-2.5 py-1 rounded-full border border-white/5 text-xs font-semibold">
+<svg className="w-3.5 h-3.5 text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+</svg>
+<span>
+Avg Response: <strong className="text-brand-200 font-bold">{formatWaitTime(averageWaitSeconds)}</strong>
+</span>
+</div>
+
+{/* Right: Consult CTA */}
+<button
+onClick={() => openBookingModal()}
+className="bg-white text-brand-700 hover:bg-slate-50 font-bold px-3 py-1 rounded-full shadow transition-all active:scale-95 text-[10px] sm:text-xs tracking-wide flex items-center gap-1.5 cursor-pointer shrink-0 border border-white/20"
+>
+<svg className="w-3 h-3 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+</svg>
+<span>Consult Now</span>
+</button>
+
+</div>
+</header>
+{/* Hero Section */}
+<header 
+className="relative overflow-hidden border-b border-slate-100/50 min-h-[500px] lg:h-[540px] max-w-[1600px] mx-auto flex items-center w-full pt-20 pb-12 lg:pt-0 lg:pb-0"
+style={{ 
+backgroundImage: "url('/hero_banner.png')", 
+backgroundRepeat: "no-repeat", 
+backgroundPosition: "center right", 
+backgroundSize: "cover" 
+}}
+>
+{/* Soft background gradient overlay for high contrast and readability on the left */}
+<div className="absolute inset-0 bg-gradient-to-r from-[#faf6f0] via-[#faf6f0]/98 md:via-[#faf6f0]/95 md:via-[45%] to-[#faf6f0]/90 md:to-transparent pointer-events-none z-0" />
+
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
+<div className="max-w-2xl flex flex-col justify-center space-y-6 text-left">
+
+<h1 className="text-4xl sm:text-5xl lg:text-[46px] font-extrabold text-slate-800 leading-[1.15] tracking-tight">
+Skip the queue. <br className="hidden sm:inline" />
+<span className="text-brand-600 font-poppins">
+Consult doctors online at home
+</span>
+</h1>
+
+<p className="text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed font-normal">
+Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.
+</p>
+
+<div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+<button
+onClick={() => openBookingModal()}
+className="w-full sm:w-auto bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold px-6 py-3.5 rounded-2xl shadow-xl shadow-brand-200 hover:shadow-brand-300 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm tracking-wide flex items-center justify-center gap-2"
+>
+<span>Consult Now</span>
+<svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+</svg>
+</button>
+
+<a
+href="https://wa.me/919861787335?text=Hello,%20I%20would%20like%20to%20consult%20a%20specialist%20online."
+target="_blank"
+rel="noopener noreferrer"
+className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3.5 rounded-2xl shadow-xl shadow-emerald-100 hover:shadow-emerald-200 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm tracking-wide flex items-center justify-center gap-2"
+>
+<svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+<path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.625 1.45 5.467 0 9.92-4.447 9.924-9.917.002-2.65-1.028-5.138-2.902-7.01C16.39 1.805 13.912.775 11.261.775c-5.474 0-9.93 4.45-9.934 9.919-.001 1.514.397 2.994 1.155 4.3l-.97 3.548 3.635-.953z"/>
+</svg>
+<span>Chat on WhatsApp</span>
+</a>
+
+<button
+onClick={() => setIsChatOpen(true)}
+className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-slate-700 hover:text-brand-600 font-bold px-5 py-3 transition-colors text-xs border border-slate-200 bg-white rounded-2xl hover:bg-slate-50 shadow-sm"
+>
+<span className="relative flex h-1.5 w-1.5">
+<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+<span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand-500"></span>
+</span>
+<span>AI Assistant Demo</span>
+</button>
+</div>
+
+{/* Live Stats Dynamic Grid */}
+<div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200/60 max-w-md">
+<div className="bg-white/70 backdrop-blur-sm p-3.5 rounded-2xl border border-white/95 shadow-sm hover:shadow transition-all duration-300 flex flex-col justify-center">
+<span className="block text-sm sm:text-base font-extrabold text-brand-600 uppercase tracking-wide leading-tight">
+Connect
+</span>
+<span className="block text-[11px] font-bold text-slate-800 tracking-wide mt-0.5">
+Instantly
+</span>
+</div>
+<div className="bg-white/70 backdrop-blur-sm p-3.5 rounded-2xl border border-white/95 shadow-sm hover:shadow transition-all duration-300">
+<span className="block text-xl sm:text-2xl font-extrabold text-slate-800">
+580
+</span>
+<span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+Sessions Done
+</span>
+</div>
+<div className="bg-white/70 backdrop-blur-sm p-3.5 rounded-2xl border border-white/95 shadow-sm hover:shadow transition-all duration-300">
+<span className="block text-xl sm:text-2xl font-extrabold text-slate-800">4.0★</span>
+<span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+Clarity Score
+</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+{/* Specialities Panel */}
+<section id="specialities" className="py-10 bg-white relative">
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+<div>
+<span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+Medical Council Specialties
+</span>
+<h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+Consult Verified Specialists
+</h2>
+<p className="text-slate-500 mt-2 max-w-xl text-sm sm:text-base">
+Meticulously selected doctors offering immediate 1-on-1 virtual appointments across crucial health realms.
+</p>
+</div>
+{/* Control Buttons */}
+<div className="flex gap-2.5 mt-4 md:mt-0">
+<button
+onClick={() => scrollSlider(specialitiesSliderRef, -1)}
+className="w-12 h-12 rounded-full border border-slate-200 hover:border-brand-500 hover:bg-brand-50 text-slate-600 hover:text-brand-600 flex items-center justify-center transition-all focus:outline-none shadow-sm active:scale-95"
+aria-label="Previous"
+<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+</svg>
+</button>
+</div>
+</div>
+
+{/* Scrollable Cards Container */}
+<div
+ref={specialitiesSliderRef}
+className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6"
+>
+{/* Cards definitions */}
+{[
+{ title: "General Physician", desc: "Fever, cough, metabolic issues, routine diagnoses", fee: "₹699", icon: "shield" },
+{ title: "Medicine Specialist", desc: "Internal organ therapy, chronic disease plans", fee: "₹699", icon: "beaker" },
+{ title: "Sexologist", desc: "Confidential therapy, private relationship support", fee: "₹699", icon: "heart" },
+{ title: "Gynaecologist", desc: "Menstruation parameters, maternal and PCOS advice", fee: "₹699", icon: "user-group" },
+{ title: "Endocrinologist", desc: "Thyroid diagnostics, hormone optimization plans", fee: "₹699", icon: "arrow-trending-up" },
+{ title: "General Surgeon", desc: "Post-op counseling, minor outpatient assessment", fee: "₹699", icon: "scissors" },
+{ title: "Psychiatrist", desc: "Mental diagnoses, emotional therapy support", fee: "₹699", icon: "bolt" },
+{ title: "Gastroenterologist", desc: "Severe acidity, IBS, gut microbiome tracking", fee: "₹699", icon: "clipboard" },
+{ title: "Mental Health", desc: "Daily counseling, anxiety reduction frameworks", fee: "₹799", tag: "PREMIUM", icon: "face-smile" }
+].map((spec, i) => {
+const displayTitle = {
+"General Physician": "General Physician",
+"Medicine Specialist": "Internal Medicine",
+"Sexologist": "Sexology",
+"Gynaecologist": "Gynaecology",
+"Endocrinologist": "Endocrinology",
+"General Surgeon": "General Surgery",
+"Psychiatrist": "Psychiatry",
+"Gastroenterologist": "Gastroenterology",
+"Mental Health": "Mental Health"
+}[spec.title] || spec.title;
+
+return (
+<div
+key={i}
+onClick={() => openBookingModal(spec.title)}
+className="flex-shrink-0 w-[280px] bg-white border border-slate-200 rounded-3xl p-6 shadow-[0_4px_24px_0_rgba(148,163,184,0.18)] hover:shadow-[0_8px_32px_0_rgba(148,163,184,0.28)] hover:border-slate-300 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer flex flex-col items-center text-center"
+>
+<div className={`w-32 h-32 rounded-full flex items-center justify-center mb-6 group-hover:scale-105 transition-transform shadow-inner ${
+spec.title === "Sexologist" ? "bg-pink-50 text-pink-500" :
+spec.title === "Gynaecologist" ? "bg-[#d2e3f5] text-[#2b6cb0]" :
+spec.title === "Medicine Specialist" ? "bg-indigo-50 text-indigo-500" :
+spec.title === "Endocrinologist" ? "bg-amber-50 text-amber-500" :
+spec.title === "General Surgeon" ? "bg-purple-50 text-purple-500" :
+spec.title === "Psychiatrist" ? "bg-red-50 text-red-500" :
+spec.title === "Gastroenterologist" ? "bg-teal-50 text-teal-500" :
+spec.title === "Mental Health" ? "bg-cyan-50 text-cyan-500" : "bg-brand-50 text-brand-500"
+}`}>
+{spec.icon === "shield" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>}
+{spec.icon === "beaker" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>}
+{spec.icon === "heart" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>}
+{spec.icon === "user-group" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>}
+{spec.icon === "arrow-trending-up" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"/></svg>}
+{spec.icon === "scissors" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"/></svg>}
+{spec.icon === "bolt" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>}
+{spec.icon === "clipboard" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>}
+{spec.icon === "face-smile" && <svg className="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+</div>
+
+{/* Centered Title */}
+<h3 className="text-[17px] font-bold text-slate-800 font-poppins mb-1 tracking-tight">
+{displayTitle}
+</h3>
+
+{/* Centered Description */}
+<p className="text-xs text-slate-400 font-medium mb-3 px-2 leading-relaxed">
+{spec.desc}
+</p>
+
+{/* Centered Price */}
+<p className="text-slate-500 text-sm font-semibold mb-5 font-dmsans">
+{spec.fee}
+</p>
+
+{/* 2 CTA Buttons */}
+<div className="grid grid-cols-2 gap-2.5 w-full mt-auto">
+<button
+onClick={(e) => {
+e.stopPropagation();
+openBookingModal(spec.title);
+}}
+className="bg-brand-600 hover:bg-brand-700 text-white text-[11px] font-bold py-2.5 px-1 rounded-xl transition-all shadow-sm active:scale-95 text-center whitespace-nowrap"
+>
+Consult now
+</button>
+<button
+onClick={(e) => {
+e.stopPropagation();
+openBookingModal(spec.title);
+}}
+className="border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-bold py-2.5 px-1 rounded-xl transition-all active:scale-95 text-center whitespace-nowrap"
+>
+Consult later
+</button>
+</div>
+</div>
+);
+})}
+</div>
+</div>
+</section>
+
+{/* Concerns Panel */}
+<section id="concerns" className="py-24 bg-[#fafcfe] border-y border-slate-100/80 relative overflow-hidden">
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-6">
+<div>
+<span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+Live Symptom Matching
+</span>
+{/* Concerns Panel */}
+<section id="concerns" className="py-14 bg-[#fafcfe] border-y border-slate-100/80 relative overflow-hidden">
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-6">
+<div>
+<span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+Live Symptom Matching
+</span>
+<h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+Identify Your Clinical Symptoms
+</h2>
+<p className="text-slate-500 mt-2 max-w-xl text-sm sm:text-base">
+Search or click common issues to seamlessly trigger the correct medical specialist matching engine.
+</p>
+</div>
+
+{/* Search Input */}
+<div className="w-full lg:max-w-md relative">
+<div className="relative">
+<input
+type="text"
+value={symptomSearchQuery}
+onChange={(e) => setSymptomSearchQuery(e.target.value)}
+placeholder="Type symptom (e.g., Fever, Cough, PCOS)..."
+className="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 rounded-2xl px-5 py-3.5 pl-12 text-sm focus:outline-none shadow-sm transition-all text-slate-800"
+/>
+<svg className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+</svg>
+</div>
+</div>
+{filteredConcerns.map((c, idx) => (
+<div
+key={idx}
+className="symptom-card flex-shrink-0 w-80 bg-white border border-slate-100 rounded-[28px] p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between snap-start"
+>
+<div>
+{/* Placeholder image representation */}
+<div className="w-full h-36 bg-brand-50 rounded-2xl overflow-hidden mb-4 relative flex items-center justify-center border border-brand-100/55 group/img">
+<img
+src={`https://placehold.co/400x250/e0f2fe/075985?text=${encodeURIComponent(c.name)}`}
+alt={c.name}
+className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+/>
+<div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm text-[8px] text-slate-500 px-2 py-0.5 rounded font-mono font-bold tracking-wider border border-slate-100 shadow-sm uppercase">
+Replace Asset
+</div>
+</div>
+
+<div className="flex items-center justify-between mb-2">
+<h3 className="text-base font-bold text-slate-800 font-poppins">{c.name}</h3>
+<span className="text-[9px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg whitespace-nowrap shrink-0">
+{c.count}
+</span>
+</div>
+<p className="text-xs text-brand-600 font-semibold mb-4">Recommended: {c.specialist}</p>
+</div>
+
+<div className="grid grid-cols-2 gap-3 mt-2 border-t border-slate-100 pt-4">
+<button
+onClick={() => openBookingModal(c.specialist)}
+className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-xs font-bold py-3 px-4 rounded-xl transition-all shadow-md shadow-brand-100 active:scale-95"
+>
+Consult
+</button>
+<a
+href={`https://wa.me/1234567890?text=Hi%20Addy%20Fitness,%20I%20am%20facing%20${encodeURIComponent(c.name)}%20and%20would%20like%20to%20connect%20with%20a%20doctor.`}
+target="_blank"
+rel="noopener noreferrer"
+className="border border-emerald-100 bg-emerald-50/55 hover:bg-emerald-50 text-emerald-800 text-xs font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 active:scale-95"
+>
+<svg className="w-3.5 h-3.5 fill-emerald-600" viewBox="0 0 24 24">
+<path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.864-9.83.002-2.623-1.023-5.09-2.885-6.953C16.588 1.958 14.117 1.15 11.99 1.15c-5.438 0-9.863 4.414-9.867 9.831-.001 1.841.488 3.639 1.417 5.223l-1.01 3.693 3.79-1.011zm13.102-7.493c-.301-.151-1.78-.879-2.056-.979-.275-.1-.475-.151-.675.151-.2.301-.775.979-.95 1.18-.175.201-.35.226-.651.075-1.127-.565-1.957-.965-2.731-2.292-.612-1.05-.192-1.613-.08-1.77.103-.141.226-.271.328-.393.101-.122.151-.202.226-.352.075-.15.038-.276-.019-.376-.056-.1-.475-1.144-.651-1.564-.171-.41-.344-.354-.475-.36l-.403-.008c-.141 0-.366.052-.558.261-.192.21-.734.717-.734 1.748 0 1.031.75 2.028.854 2.167.104.139 1.478 2.257 3.58 3.167.5.216.89.345 1.196.443.502.16 1.06.131 1.461.071.447-.066 1.385-.566 1.58-.112.195.454.195.842.14 1.011-.055.169-.2.301-.501.452z" />
+</svg>
+<span>WhatsApp</span>
+<a
+href={`https://wa.me/1234567890?text=Hi%20Addy%20Fitness,%20I%20am%20facing%20${encodeURIComponent(c.name)}%20and%20would%20like%20to%20connect%20with%20a%20doctor.`}
+target="_blank"
+rel="noopener noreferrer"
+className="border border-emerald-100 bg-emerald-50/55 hover:bg-emerald-50 text-emerald-800 text-xs font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 active:scale-95"
+>
+<svg className="w-3.5 h-3.5 fill-emerald-600" viewBox="0 0 24 24">
+<path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.864-9.83.002-2.623-1.023-5.09-2.885-6.953C16.588 1.958 14.117 1.15 11.99 1.15c-5.438 0-9.863 4.414-9.867 9.831-.001 1.841.488 3.639 1.417 5.223l-1.01 3.693 3.79-1.011zm13.102-7.493c-.301-.151-1.78-.879-2.056-.979-.275-.1-.475-.151-.675.151-.2.301-.775.979-.95 1.18-.175.201-.35.226-.651.075-1.127-.565-1.957-.965-2.731-2.292-.612-1.05-.192-1.613-.08-1.77.103-.141.226-.271.328-.393.101-.122.151-.202.226-.352.075-.15.038-.276-.019-.376-.056-.1-.475-1.144-.651-1.564-.171-.41-.344-.354-.475-.36l-.403-.008c-.141 0-.366.052-.558.261-.192.21-.734.717-.734 1.748 0 1.031.75 2.028.854 2.167.104.139 1.478 2.257 3.58 3.167.5.216.89.345 1.196.443.502.16 1.06.131 1.461.071.447-.066 1.385-.566 1.58-.112.195.454.195.842.14 1.011-.055.169-.2.301-.501.452z" />
+</svg>
+<span>WhatsApp</span>
+</a>
+</div>
+</div>
+))}
+</div>
+) : (
+<p className="text-center text-slate-400 py-12 font-medium">
+No symptoms match your search. Try searching for "Fever", "Cough", "PCOS", or connect directly to a General Physician.
+</p>
+)}
+</div>
+</section>
+
+{/* Why Trust Us Section */}
+<section id="why-trust-us" className="py-8 relative overflow-hidden" style={{ backgroundColor: '#faf5ec' }}>
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div className="text-center max-w-2xl mx-auto mb-16">
+<span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+Our Quality Standard
+</span>
+<h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+Why Patients Trust Addy Fitness
+</h2>
+<p className="text-slate-500 mt-2 text-sm sm:text-base">
+Pioneering safe, encrypted digital diagnostics tied directly with legal medical compliance protocols.
+</div>
+
+{/* Step 2 */}
+<div className="group relative rounded-[28px] p-6 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 cursor-default z-10" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}
+onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(129,140,248,0.4)'}
+onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+>
+<div className="absolute inset-0 rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)' }} />
+
+{/* Step number orb */}
+<div className="relative w-14 h-14 mb-4 z-10">
+<div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)', animationDuration: '3s', animationDelay: '1s' }} />
+<div className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl" style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)', boxShadow: '0 0 30px rgba(99,102,241,0.35)' }}>
+<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+</svg>
+</div>
+<div className="absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-black" style={{ background: '#0f172a', borderColor: '#6366f1', color: '#818cf8' }}>2</div>
+</div>
+
+<span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>Step Two</span>
+
+<h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Pay &amp; Connect Securely</h3>
+<p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
+Submit your health metrics in one simplified stage, finalize your secure booking, and instantly join your encrypted clinic room.
+</p>
+
+<div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #4f46e5, #818cf8)' }} />
+</div>
+
+{/* Step 3 */}
+<div className="group relative rounded-[28px] p-6 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 cursor-default z-10" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}
+onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(16,185,129,0.4)'}
+onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+>
+<div className="absolute inset-0 rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(16,185,129,0.08) 0%, transparent 70%)' }} />
+
+{/* Step number orb */}
+<div className="relative w-14 h-14 mb-4 z-10">
+<div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: 'linear-gradient(135deg, #10b981, #34d399)', animationDuration: '3s', animationDelay: '2s' }} />
+<div className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl" style={{ background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 0 30px rgba(16,185,129,0.35)' }}>
+<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+</svg>
+</div>
+<div className="absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-black" style={{ background: '#0f172a', borderColor: '#10b981', color: '#34d399' }}>3</div>
+</div>
+
+<span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399' }}>Step Three</span>
+
+<h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Get Your Prescription</h3>
+<p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
+Download your digitally stamped legal prescription instantly, request follow-up schedules, and sync your fitness care plan.
+</p>
+
+<div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
+</div>
+
+</div>
+</div>
+c        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+{/* Section Header */}
+<div className="text-center max-w-2xl mx-auto mb-12">
+<span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-widest uppercase mb-4 border" style={{ background: 'rgba(225,29,72,0.1)', borderColor: 'rgba(225,29,72,0.25)', color: '#fb7185' }}>
+<span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping inline-block" />
+Booking Flow
+</span>
+<h2 className="text-2xl sm:text-3xl font-extrabold font-poppins mb-3 leading-tight" style={{ color: '#ffffff' }}>
+Three Steps To{' '}
+<span style={{ background: 'linear-gradient(90deg, #fb7185, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+Connected Care
+</span>
+</h2>
+<p className="text-sm sm:text-base" style={{ color: 'rgba(148,163,184,0.9)' }}>
+Follow this step-by-step flow to connect with a registered physician instantly.
+</p>
+</div>
+
+{/* Steps Grid */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 relative">
+
+{/* Connecting dashed line 1 (Step 1 -> Step 2) */}
+<div className="hidden md:flex absolute top-[72px] left-[calc(16.6%+45px)] right-[calc(50%+45px)] items-center justify-center z-0 pointer-events-none gap-1">
+<div className="flex-1 h-[2px] border-t-2 border-dashed" style={{ borderColor: 'rgba(148,163,184,0.25)' }} />
+<svg className="w-4 h-4 text-indigo-400/60" fill="currentColor" viewBox="0 0 24 24">
+<path d="M13.22 19.03a.75.75 0 010-1.06l5.47-5.47H3a.75.75 0 010-1.5h15.69l-5.47-5.47a.75.75 0 011.06-1.06l6.75 6.75a.75.75 0 010 1.06l-6.75 6.75a.75.75 0 01-1.06 0z" />
+</svg>
+</div>
+
+{/* Connecting dashed line 2 (Step 2 -> Step 3) */}
+<div className="hidden md:flex absolute top-[72px] left-[calc(50%+45px)] right-[calc(16.6%+45px)] items-center justify-center z-0 pointer-events-none gap-1">
+<div className="flex-1 h-[2px] border-t-2 border-dashed" style={{ borderColor: 'rgba(148,163,184,0.25)' }} />
+<svg className="w-4 h-4 text-emerald-400/60" fill="currentColor" viewBox="0 0 24 24">
+<path d="M13.22 19.03a.75.75 0 010-1.06l5.47-5.47H3a.75.75 0 010-1.5h15.69l-5.47-5.47a.75.75 0 011.06-1.06l6.75 6.75a.75.75 0 010 1.06l-6.75 6.75a.75.75 0 01-1.06 0z" />
+</svg>
+</div>
+
+{/* Step 1 */}
+<div className="group relative rounded-[28px] p-6 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 cursor-default z-10" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}
+onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(251,113,133,0.4)'}
+{ name: "Dr. Evelyn Sterling", spec: "Gynaecologist", e
+>
+<div className="absolute inset-0 rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(251,113,133,0.08) 0%, transparent 70%)' }} />
+
+{/* Step number orb */}
+<div className="relative w-14 h-14 mb-4 z-10">
+<div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: 'linear-gradient(135deg, #f43f5e, #fb7185)', animationDuration: '3s' }} />
+<div className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl" style={{ background: 'linear-gradient(135deg, #e11d48, #f43f5e)', boxShadow: '0 0 30px rgba(225,29,72,0.35)' }}>
+<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+</svg>
+</div>
+<div className="absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-black" style={{ background: '#0f172a', borderColor: '#f43f5e', color: '#f43f5e' }}>1</div>
+</div>
+
+<span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(251,113,133,0.12)', color: '#fb7185' }}>Step One</span>
+
+<h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Select Your Symptom</h3>
+<p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
+Choose from our specialized medical fields, or use our live AI-filter to instantly match your symptoms to the right specialist.
+</p>
+
+<div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #e11d48, #f43f5e)' }} />
+</div>
+
+{/* Step 2 */}
+<div className="group relative rounded-[28px] p-6 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 cursor-default z-10" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}
+onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(129,140,248,0.4)'}
+onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+>
+<div className="absolute inset-0 rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)' }} />
+
+{/* Step number orb */}
+<div className="relative w-14 h-14 mb-4 z-10">
+<div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)', animationDuration: '3s', animationDelay: '1s' }} />
+<div className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl" style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)', boxShadow: '0 0 30px rgba(99,102,241,0.35)' }}>
+<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+</svg>
+</div>
+<div className="absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-black" style={{ background: '#0f172a', borderColor: '#6366f1', color: '#818cf8' }}>2</div>
+</div>
+
+<span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>Step Two</span>
+
+<h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Pay &amp; Connect Securely</h3>
+<p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
+Submit your health metrics in one simplified stage, finalize your secure booking, and instantly join your encrypted clinic room.
+</p>
+
+<div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #4f46e5, #818cf8)' }} />
+</div>
+
+{/* Step 3 */}
+<div className="group relative rounded-[28px] p-6 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 cursor-default z-10" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}
+onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(16,185,129,0.4)'}
+onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+>
+<div className="absolute inset-0 rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(16,185,129,0.08) 0%, transparent 70%)' }} />
+
+{/* Step number orb */}
+<div className="relative w-14 h-14 mb-4 z-10">
+<div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: 'linear-gradient(135deg, #10b981, #34d399)', animationDuration: '3s', animationDelay: '2s' }} />
+<div className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl" style={{ background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 0 30px rgba(16,185,129,0.35)' }}>
+<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+</svg>
+</div>
+<div className="absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-black" style={{ background: '#0f172a', borderColor: '#10b981', color: '#34d399' }}>3</div>
+</div>
+
+<span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399' }}>Step Three</span>
+
+<h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Get Your Prescription</h3>
+<p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
+Download your digitally stamped legal prescription instantly, request follow-up schedules, and sync your fitness care plan.
+</p>
+
+<div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
+</div>
+
+</div>
+</div>
+l        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+{/* Section Header */}
+<div className="text-center max-w-2xl mx-auto mb-12">
+<span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-widest uppercase mb-4 border" style={{ background: 'rgba(225,29,72,0.1)', borderColor: 'rgba(225,29,72,0.25)', color: '#fb7185' }}>
+<span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping inline-block" />
+Booking Flow
+</span>
+<h2 className="text-2xl sm:text-3xl font-extrabold font-poppins mb-3 leading-tight" style={{ color: '#ffffff' }}>
+Three Steps To{' '}
+<span style={{ background: 'linear-gradient(90deg, #fb7185, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+Connected Care
+</span>
+</h2>
+<p className="text-sm sm:text-base" style={{ color: 'rgba(148,163,184,0.9)' }}>
+Follow this step-by-step flow to connect with a registered physician instantly.
+</p>
+</div>
+
+{/* Steps Grid */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 relative">
+
+{/* Connecting dashed line 1 (Step 1 -> Step 2) */}
+<div className="hidden md:flex absolute top-[72px] left-[calc(16.6%+45px)] right-[calc(50%+45px)] items-center justify-center z-0 pointer-events-none gap-1">
+<div className="flex-1 h-[2px] border-t-2 border-dashed" style={{ borderColor: 'rgba(148,163,184,0.25)' }} />
+<svg className="w-4 h-4 text-indigo-400/60" fill="currentColor" viewBox="0 0 24 24">
+<path d="M13.22 19.03a.75.75 0 010-1.06l5.47-5.47H3a.75.75 0 010-1.5h15.69l-5.47-5.47a.75.75 0 011.06-1.06l6.75 6.75a.75.75 0 010 1.06l-6.75 6.75a.75.75 0 01-1.06 0z" />
+</svg>
+</div>
+
+{/* Connecting dashed line 2 (Step 2 -> Step 3) */}
+<div className="hidden md:flex absolute top-[72px] left-[calc(50%+45px)] right-[calc(16.6%+45px)] items-center justify-center z-0 pointer-events-none gap-1">
+<div className="absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-black" style={{ background: '#0f172a', borderColor: '#f43f5e', color: '#f43f5e' }}>1</div>
+</div>
+
+{/* Tag */}
+<span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(251,113,133,0.12)', color: '#fb7185' }}>Step One</span>
+
+<h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Select Your Symptom</h3>
+<p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
+Choose from our specialized medical fields, or use our live AI-filter to instantly match your symptoms to the right specialist.
+</p>
+
+{/* Bottom accent line */}
+<div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #e11d48, #f43f5e)' }} />
+</div>
+
+{/* Step 2 */}
+<div className="group relative rounded-[28px] p-6 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 cursor-default md:mt-6" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}
+onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(129,140,248,0.5)'}
+onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
+>
+<div className="absolute inset-0 rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(99,102,241,0.1) 0%, transparent 70%)' }} />
+
+{/* Featured badge */}
+<div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase" style={{ background: 'linear-gradient(90deg, #6366f1, #818cf8)', color: '#fff' }}>
+Most Popular
+</div>
+
+{/* Step number orb */}
+<div className="relative w-14 h-14 mb-4 z-10">
+<div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)', animationDuration: '3s', animationDelay: '1s' }} />
+<div className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl" style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)', boxShadow: '0 0 30px rgba(99,102,241,0.4)' }}>
+<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+</svg>
+</div>
+<div className="absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-black" style={{ background: '#0f172a', borderColor: '#6366f1', color: '#818cf8' }}>2</div>
+</div>
+
+<span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>Step Two</span>
+
+<h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Pay & Connect Securely</h3>
+<p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
+Submit your health metrics in one simplified stage, finalize your secure booking, and instantly join your encrypted clinic room.
+</p>
+
+<div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #4f46e5, #818cf8)' }} />
+</div>
+
+{/* Step 3 */}
+<div className="group relative rounded-[28px] p-6 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 cursor-default" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}
+onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(16,185,129,0.4)'}
+onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+>
+<div className="absolute inset-0 rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(16,185,129,0.08) 0%, transparent 70%)' }} />
+
+{/* Step number orb */}
+<div className="relative w-14 h-14 mb-4 z-10">
+<div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: 'linear-gradient(135deg, #10b981, #34d399)', animationDuration: '3s', animationDelay: '2s' }} />
+<div className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl" style={{ background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 0 30px rgba(16,185,129,0.35)' }}>
+<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+</svg>
+</div>
+<div className="absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-black" style={{ background: '#0f172a', borderColor: '#10b981', color: '#34d399' }}>3</div>
+</div>
+
+<span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399' }}>Step Three</span>
+
+<h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Get Your Prescription</h3>
+<p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
+onClick={() => openBookingModal()}
+className="inline-flex items-center gap-3 font-bold px-8 py-4 rounded-2xl transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm tracking-wide shadow-2xl"
+style={{ background: 'linear-gradient(135deg, #e11d48, #6366f1)', color: '#fff', boxShadow: '0 8px 32px rgba(225,29,72,0.3)' }}
+>
+<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+</svg>
+Start Your Consultation Now
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+</svg>
+</button>
+<p className="mt-3 text-xs" style={{ color: 'rgba(148,163,184,0.6)' }}>No appointment needed · Available 24/7 · MCI-verified doctors</p>
+</div>
+
+</div>
+</section>
+
+
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+</svg>
+</button>
+<p className="mt-3 text-xs" style={{ color: 'rgba(148,163,184,0.6)' }}>No appointment needed · Available 24/7 · MCI-verified doctors</p>
+</div>
+
+</div>
+</section>
+
+
+
+
+
+
+
+{/* Why Trust Us — Merged Section */}
+<section className="py-10 bg-gradient-to-b from-white to-[#faf6f0]/30 relative overflow-hidden">
+{/* Subtle background blobs */}
+<div className="absolute top-0 left-0 w-96 h-96 bg-brand-50/40 rounded-full blur-[120px] pointer-events-none" />
+<div className="absolute bottom-0 right-0 w-80 h-80 bg-indigo-50/30 rounded-full blur-[100px] pointer-events-none" />
+
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+{/* Centered Heading */}
+<div className="text-center max-w-3xl mx-auto mb-8">
+<span className="text-xs font-extrabold text-brand-600 tracking-widest uppercase block mb-1.5">Our Advantage Matrix</span>
+<h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-poppins leading-tight">
+Expert Virtual Consultations &amp; Instant Digital Prescriptions
+</h2>
+<p className="text-slate-500 mt-2 text-xs sm:text-sm leading-relaxed max-w-xl mx-auto">
+Skip the waiting room &mdash; connect with verified doctors online, get a diagnosis, and receive your digital prescription instantly from home.
+</p>
+</div>
+
+{/* Grid Container for USPs only (Graph removed) */}
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+{/* Card 1 */}
+<div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex gap-3.5 items-start">
+<div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+</div>
+<div>
+<h3 className="text-xs font-bold text-slate-800 font-poppins mb-1">24&times;7 Expert Consultations</h3>
+<p className="text-[10px] text-slate-500 leading-relaxed">Connect with certified doctors anytime through instant chat or scheduled video consultations.</p>
+</div>
+</div>
+
+{/* Card 2 */}
+<div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex gap-3.5 items-start">
+<div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+</div>
+<div>
+<h3 className="text-xs font-bold text-slate-800 font-poppins mb-1">Quick &amp; Hassle-Free</h3>
+<p className="text-[10px] text-slate-500 leading-relaxed">Book your consultation in minutes and receive expert guidance from the comfort of your home.</p>
+</div>
+</div>
+
+{/* Card 3 */}
+<div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex gap-3.5 items-start">
+<div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+</div>
+<div>
+<h3 className="text-xs font-bold text-slate-800 font-poppins mb-1">Secure &amp; Confidential</h3>
+<p className="text-[10px] text-slate-500 leading-relaxed">Your health records and prescriptions are protected with complete privacy and AES-256 encryption.</p>
+</div>
+</div>
+
+{/* Card 4 */}
+<div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex gap-3.5 items-start">
+<div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-.553.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+</div>
+<div>
+<h3 className="text-xs font-bold text-slate-800 font-poppins mb-1">Clinic-Like Experience</h3>
+<p className="text-[10px] text-slate-500 leading-relaxed">Enjoy personalized one-on-one video consultations with the same care as an in-person visit.</p>
+</div>
+</div>
+
+{/* Card 5 */}
+<div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex gap-3.5 items-start lg:col-span-1">
+<div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+</div>
+<div>
+<h3 className="text-xs font-bold text-slate-800 font-poppins mb-1">Digital Prescription &amp; Follow-Up</h3>
+<p className="text-[10px] text-slate-500 leading-relaxed">Receive a verified digital prescription and complimentary follow-up support to keep your treatment on track.</p>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+{/* FAQ Section */}
+<section className="py-14 bg-slate-50 relative border-t border-slate-100">
+<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div className="text-center max-w-2xl mx-auto mb-16">
+<span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+Patient Queries
+</span>
+<h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+Frequently Asked Questions
+</h2>
+<p className="text-slate-500 mt-2 text-sm sm:text-base">
+Everything you need to know about credentials, billing policies, and medical legality.
+</p>
+</div>
+
+<div className="space-y-4">
+{[
+<h3 className="text-xs font-bold text-slate-800 font-poppins mb-0.5">24&times;7 Expert Consultations</h3>
+<p className="text-[10px] text-slate-500 leading-relaxed">Connect with certified doctors anytime through instant chat or scheduled video consultations.</p>
+</div>
+</div>
+
+{/* USP 2 */}
+<div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex gap-3.5 items-start">
+<div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+</div>
+<div>
+<h3 className="text-xs font-bold text-slate-800 font-poppins mb-0.5">Quick &amp; Hassle-Free</h3>
+<p className="text-[10px] text-slate-500 leading-relaxed">Book your consultation in minutes and receive expert guidance from the comfort of your home.</p>
+</div>
+</div>
+
+{/* USP 3 */}
+<div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex gap-3.5 items-start">
+<div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+</div>
+<div>
+<h3 className="text-xs font-bold text-slate-800 font-poppins mb-0.5">Secure &amp; Confidential</h3>
+<p className="text-[10px] text-slate-500 leading-relaxed">Your health records and prescriptions are protected with complete privacy and AES-256 encryption.</p>
+</div>
+</div>
+
+{/* USP 4 */}
+<div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex gap-3.5 items-start">
+<div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-.553.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+</div>
+<div>
+<h3 className="text-xs font-bold text-slate-800 font-poppins mb-0.5">Clinic-Like Experience</h3>
+<p className="text-[10px] text-slate-500 leading-relaxed">Enjoy personalized one-on-one video consultations with the same care as an in-person visit.</p>
+</div>
+</div>
+
+{/* USP 5 */}
+<div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex gap-3.5 items-start sm:col-span-2">
+</p>
+</div>
+
+<div className="space-y-4">
+{[
+{
+q: "What credentials do Addy Fitness doctors hold?",
+a: "Every single general practitioner and clinical specialist on our portal is carefully vetted against national medical licensing databases. They hold verified MBBS, MD, MS, or PhD qualifications with extensive experience in physical outpatient facilities."
+},
+{
+<p className="text-center text-slate-400 text-[10px] mt-4">
+🔒 This is a free AI triage assistant. Not a substitute for professional medical advice.
+</p>
+</div>
+</section>
+
+
+
+
+{/* Benefits */}
+<section className="py-14 bg-white relative">
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+{/* Left Dashboard Panel */}
+<div className="lg:col-span-5 relative hidden lg:flex justify-center items-center">
+<div className="w-96 h-96 rounded-full bg-brand-100/40 absolute filter blur-[80px]"></div>
+<div className="bg-white p-8 rounded-[32px] shadow-2xl border border-slate-100/80 relative z-10 w-full max-w-[380px] space-y-6">
+<div className="flex items-center gap-3">
+<div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></div>
+<span className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase">
+Active Clinic Statistics
+</span>
+</div>
+<div className="space-y-4">
+<div>
+<div className="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+<span>Verified Doctor Council</span>
+<span>100% Passed</span>
+</div>
+<div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+<div className="bg-gradient-to-r from-brand-500 to-sky-400 h-full rounded-full w-full"></div>
+</div>
+</div>
+<div>
+<div className="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+<span>Prescription Turnaround</span>
+<span>99.4% Rate</span>
+</div>
+<div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+<div className="bg-gradient-to-r from-brand-500 to-sky-400 h-full rounded-full w-[99.4%]"></div>
+</div>
+</div>
+<div>
+<div className="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+<span>Clinical Encryptions</span>
+<span>AES-256 Verified</span>
+</div>
+<div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+<div className="bg-gradient-to-r from-brand-500 to-sky-400 h-full rounded-full w-full"></div>
+</div>
+</div>
+</div>
+<div className="p-4 bg-slate-50 rounded-2xl text-[11px] text-slate-500 leading-relaxed italic">
+"Connecting with an Endocrinologist took exactly 4 minutes. Addy Fitness makes consulting effortless."
+</div>
+</div>
+</div>
+
+{/* Right detailed bullets */}
+<div className="lg:col-span-7 space-y-8">
+<div>
+<span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+Our Advantage Matrix
+</span>
+<h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+Telemedicine Optimized For Absolute Patient Comfort
+</h2>
+<p className="text-slate-500 mt-2 text-sm sm:text-base leading-relaxed">
+We bypass physical clinic friction by combining modern technological ease with verified practitioners.
+</p>
+</div>
+
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<div className="flex gap-4">
+<div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+</svg>
+</div>
+<div>
+<h3 className="text-base font-bold text-slate-800 font-poppins mb-1.5">
+24×7 Expert Consultations
+</h3>
+<p className="text-xs text-slate-500 leading-relaxed">
+Connect with certified doctors and healthcare experts anytime through instant chat or scheduled video consultations.
+</p>
+</div>
+</div>
+
+<div className="flex gap-4">
+<div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+</svg>
+</div>
+<div>
+<h3 className="text-base font-bold text-slate-800 font-poppins mb-1.5">
+Quick &amp; Hassle-Free
+</h3>
+<p className="text-xs text-slate-500 leading-relaxed">
+Book your consultation in minutes and receive expert medical guidance from the comfort of your home.
+</p>
+</div>
+</div>
+
+<div className="flex gap-4">
+<div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+</svg>
+</div>
+<div>
+<h3 className="text-base font-bold text-slate-800 font-poppins mb-1.5">
+Secure &amp; Confidential
+</h3>
+<p className="text-xs text-slate-500 leading-relaxed">
+Your health records, conversations, and prescriptions are protected with complete privacy and secure encryption.
+</p>
+</div>
+</div>
+
+<div className="flex gap-4">
+<div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-.553.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+</svg>
+</div>
+<div>
+<h3 className="text-base font-bold text-slate-800 font-poppins mb-1.5">
+Clinic-Like Experience
+</h3>
+<p className="text-xs text-slate-500 leading-relaxed">
+Enjoy personalized one-on-one video consultations that provide the same attention and care as an in-person clinic visit.
+</p>
+</div>
+</div>
+
+<div className="flex gap-4 sm:col-span-2">
+<div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+{/* Streamlined Booking Modal */}
+<div
+className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 ${
+isBookingModalOpen ? "opacity-100 visible" : "opacity-0 invisible"
+}`}
+>
+<div
+className={`bg-white w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-100 p-6 sm:p-8 transition-all duration-300 overflow-y-auto max-h-[90vh] scrollbar-hide ${
+isBookingModalOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
+}`}
+>
+{/* Header Block */}
+{bookingStep !== "room" && (
+<div className="flex items-center justify-between mb-6">
+<div>
+<h3 className="text-lg font-bold text-slate-900 font-poppins">Direct Doctor Consultation</h3>
+<p className="text-xs text-slate-500 mt-1">
+Fill out the quick patient parameters below to pay and connect instantly.
+</p>
+</div>
+<button
+onClick={closeBookingModal}
+className="w-9 h-9 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-all focus:outline-none"
+aria-label="Close"
+>
+<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+</svg>
+</button>
+</div>
+)}
+
+{/* Step 1: Form */}
+{bookingStep === "form" && (
+<form onSubmit={submitSimplifiedBooking} className="space-y-4">
+<div>
+<label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+Patient Full Name
+</label>
+<input
+type="text"
+value={bookingName}
+onChange={(e) => setBookingName(e.target.value)}
+placeholder="John Doe"
+required
+className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium"
+/>
+</div>
+
+<div>
+<label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+Mobile Number
+</label>
+<input
+type="tel"
+value={bookingPhone}
+onChange={(e) => setBookingPhone(e.target.value)}
+placeholder="9876543210"
+required
+className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium"
+/>
+</div>
+
+<div className="grid grid-cols-3 gap-3">
+<div>
+<label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Age</label>
+<input
+type="number"
+value={bookingAge}
+onChange={(e) => setBookingAge(e.target.value)}
+placeholder="28"
+required
+min="1"
+max="120"
+className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-3 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium"
+/>
+</div>
+<div>
+<label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+Height (cm)
+</label>
+<input
+type="number"
+value={bookingHeight}
+onChange={(e) => setBookingHeight(e.target.value)}
+placeholder="175"
+required
+className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-3 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium"
+/>
+</div>
+<div>
+<label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+Weight (kg)
+</label>
+<input
+type="number"
+value={bookingWeight}
+onChange={(e) => setBookingWeight(e.target.value)}
+placeholder="70"
+required
+className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-3 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium"
+/>
+</div>
+</div>
+
+<div>
+<label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+Choose Medical Focus
+</label>
+<select
+value={bookingSpeciality}
+onChange={(e) => setBookingSpeciality(e.target.value)}
+className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 focus:outline-none transition-all"
+>
+<option value="General Physician">General Physician (₹699)</option>
+<option value="Medicine Specialist">Medicine Specialist (₹699)</option>
+<option value="Sexologist">Sexologist (₹699)</option>
+<option value="Gynaecologist">Gynaecologist (₹699)</option>
+<option value="Endocrinologist">Endocrinologist (₹699)</option>
+<option value="General Surgeon">General Surgeon (₹699)</option>
+<option value="Psychiatrist">Psychiatrist (₹699)</option>
+<option value="Gastroenterologist">Gastroenterologist (₹699)</option>
+<option value="Mental Health">Mental Health (₹799)</option>
+</select>
+</div>
+
+<div>
+<label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+Briefly Describe Your Concern
+</label>
+<textarea
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div className="pr-2">
+<h5 className="text-xs font-bold text-emerald-900">Virtual Session Active</h5>
+<p className="text-[10px] text-emerald-700 mt-0.5">
+E-Prescription draft generates immediately on conversation close.
+</p>
+</div>
+<button
+onClick={simulatePrescriptionDownload}
+className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-2 rounded-lg transition-colors whitespace-nowrap shrink-0"
+>
+Draft PDF
+</button>
+</div>
+</div>
+)}
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-900 pt-8 flex flex-col md:flex-row items-center justify-between text-slate-600 text-[11px] gap-4">
+<p>&copy; 2026 Addy Fitness Virtual Clinic. Dedicated professional telehealth compliance. All rights reserved.</p>
+<div className="flex gap-6 font-semibold">
+<a href="#" className="hover:text-slate-400">Privacy &amp; HIPAA Standards</a>
+<a href="#" className="hover:text-slate-400">Terms of Use</a>
+<a href="#" className="hover:text-slate-400">Clinical Disclaimer</a>
+</div>
+</div>
+</footer>
+</>
+);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+style={{ minHeight: '260px', maxHeight: '320px' }}
+>
+{sandboxMessages.map((msg, idx) => (
+<div key={idx} className={`flex gap-2 ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+{!msg.isUser && (
+<div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-500 to-indigo-500 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+<svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" />
+</svg>
+</div>
+)}
+<div className={`max-w-[80%] rounded-2xl px-3 py-2 text-[11px] leading-relaxed shadow-sm ${
+msg.isUser
+? 'bg-brand-600 text-white rounded-tr-sm font-medium'
+: 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm'
+}`}>
+{msg.text.split('\n\n').map((para, pIdx) => {
+if (para.startsWith('**Triage recommendation:**')) {
+return (
+<p key={pIdx} className="mb-1">
+<strong>Suggested:</strong>{' '}
+<span className="text-brand-600 font-extrabold">{msg.recommendation}</span>
+</p>
+);
+}
+return <p key={pIdx} className="mb-1 last:mb-0">{para}</p>;
+})}
+{msg.recommendation && (
+<div className="mt-2 pt-2 border-t border-slate-100">
+<button
+onClick={() => openBookingModal(msg.recommendation)}
+className="bg-brand-600 hover:bg-brand-700 text-white font-bold px-3 py-1 rounded-lg transition-all text-[10px] inline-flex items-center gap-1 shadow"
+>
+Book this specialist →
+</button>
+</div>
+)}
+</div>
+{msg.isUser && (
+<div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center shrink-0 mt-0.5">
+<svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+</svg>
+</div>
+)}
+</div>
+))}
+{isSandboxAnalyzing && (
+<div className="flex gap-2 justify-start">
+<div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-500 to-indigo-500 flex items-center justify-center shrink-0">
+<svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" />
+</svg>
+</div>
+<div className="bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-3 py-2 shadow-sm flex items-center gap-1">
+<span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:0ms]" />
+<span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:150ms]" />
+<span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:300ms]" />
+</div>
+</div>
+)}
+</div>
+
+{/* Quick Chips */}
+<div className="px-3 py-2 bg-white border-t border-slate-100 flex gap-1.5 overflow-x-auto scrollbar-hide shrink-0">
+<span className="text-[9px] text-slate-400 font-semibold self-center shrink-0">Try:</span>
+{['Fever & Body Ache', 'PCOS Symptoms', 'IBS issue', 'Anxiety', 'Chest Pain'].map(chip => (
+<button
+key={chip}
+onClick={() => sendSandboxChip(chip)}
+className="bg-slate-100 hover:bg-brand-500 hover:text-white transition-all text-[10px] font-semibold text-slate-600 px-2.5 py-1 rounded-full shrink-0 border border-slate-200 hover:border-brand-500"
+>
+{chip}
+</button>
+))}
+</div>
+
+{/* Input */}
+<div className="px-3 py-2.5 bg-white border-t border-slate-100 flex gap-2 items-center shrink-0">
+<input
+type="text"
+value={sandboxInput}
+onChange={(e) => setSandboxInput(e.target.value)}
+onKeyDown={handleSandboxEnter}
+placeholder="Describe your symptoms..."
+className="flex-1 bg-slate-50 border border-slate-200 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 rounded-xl px-3 py-2 text-[11px] focus:outline-none transition-all placeholder:text-slate-400"
+/>
+<button
+onClick={sendSandboxFreeText}
+className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold text-[10px] px-3 py-2 rounded-xl transition-all active:scale-95 shadow flex items-center gap-1"
+>
+<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+</svg>
+Send
+</button>
+</div>
+
+<p className="text-center text-slate-400 text-[9px] py-1.5 bg-white border-t border-slate-50 shrink-0">
+🔒 AI triage only. Not a substitute for professional advice.
+</p>
+</div>
+)}
+
+{/* Toggle Button */}
+<button
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+</svg>
+</div>
+)}
+</div>
+))}
+{isSandboxAnalyzing && (
+<div className="flex gap-2 justify-start">
+<div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-500 to-indigo-500 flex items-center justify-center shrink-0">
+<svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" />
+</svg>
+</div>
+<div className="bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-3 py-2 shadow-sm flex items-center gap-1">
+<span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:0ms]" />
+<span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:150ms]" />
+<span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:300ms]" />
+</div>
+</div>
+)}
+</div>
+
+{/* Quick Chips */}
+<div className="px-3 py-2 bg-white border-t border-slate-100 flex gap-1.5 overflow-x-auto scrollbar-hide shrink-0">
+<span className="text-[9px] text-slate-400 font-semibold self-center shrink-0">Try:</span>
+{['Fever & Body Ache', 'PCOS Symptoms', 'IBS issue', 'Anxiety', 'Chest Pain'].map(chip => (
+<button
+key={chip}
+onClick={() => sendSandboxChip(chip)}
+className="bg-slate-100 hover:bg-brand-500 hover:text-white transition-all text-[10px] font-semibold text-slate-600 px-2.5 py-1 rounded-full shrink-0 border border-slate-200 hover:border-brand-500"
+>
+{chip}
+</button>
+))}
+</div>
+
+{/* Input */}
+<div className="px-3 py-2.5 bg-white border-t border-slate-100 flex gap-2 items-center shrink-0">
+<input
+type="text"
+value={sandboxInput}
+onChange={(e) => setSandboxInput(e.target.value)}
+onKeyDown={handleSandboxEnter}
+placeholder="Describe your symptoms..."
+className="flex-1 bg-slate-50 border border-slate-200 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 rounded-xl px-3 py-2 text-[11px] focus:outline-none transition-all placeholder:text-slate-400"
+/>
+<button
+onClick={sendSandboxFreeText}
+className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold text-[10px] px-3 py-2 rounded-xl transition-all active:scale-95 shadow flex items-center gap-1"
+>
+<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+</svg>
+Send
+</button>

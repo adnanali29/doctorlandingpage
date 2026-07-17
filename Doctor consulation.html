@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareFirst - Premium Online Medical Consultation</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Poppins, DM Sans, Montserrat -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                        dmsans: ['DM Sans', 'sans-serif'],
+                        montserrat: ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    animation: {
+                        'pulse-subtle': 'pulseSubtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 5s ease-in-out infinite',
+                        'float-delayed': 'float 5s ease-in-out infinite 2s',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'spin-slow': 'spin 12s linear infinite',
+                    },
+                    keyframes: {
+                        pulseSubtle: {
+                            '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+                            '50%': { opacity: '.92', transform: 'scale(1.015)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px rgba(14, 165, 233, 0.15)' },
+                            '100%': { boxShadow: '0 0 20px rgba(14, 165, 233, 0.45)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            font-family: 'DM Sans', sans-serif;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Poppins', sans-serif;
+        }
+        .montserrat-font {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .glass-panel-dark {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-[#fcfdfe] text-slate-800 selection:bg-brand-100 selection:text-brand-900 overflow-x-hidden">
+
+    <!-- Top Live Ticker Alert -->
+    <div class="bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-700 text-white py-2 px-4 text-center text-xs font-semibold relative z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-center gap-3 flex-wrap">
+            <span class="inline-flex h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>Live Panel Status: <strong id="header-active-count">38 Verified Specialists</strong> active online right now.</span>
+            <span class="hidden md:inline bg-white/20 px-2 py-0.5 rounded text-[10px]">Average Response: <span id="header-wait-time">4m 15s</span></span>
+            <button onclick="openBookingModal()" class="underline hover:text-brand-100 transition-all font-bold ml-2">Connect Now &rarr;</button>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100/80 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <!-- Professional Real Logo Icon representation -->
+                <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-brand-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight text-slate-900 font-poppins">Care<span class="text-brand-500">First</span></span>
+                    <span class="block text-[9px] text-slate-400 tracking-wider font-bold uppercase -mt-1">Telemedicine OS</span>
+                </div>
+            </div>
+            
+            <div class="hidden lg:flex items-center gap-8">
+                <a href="#specialities" class="text-sm font-semibold text-slate-600 hover:text-brand-600 transition-colors">Specialities</a>
+                <a href="#concerns" class="text-sm font-semibold text-slate-600 hover:text-brand-600 transition-colors">Symptom Checker</a>
+                <a href="#why-trust-us" class="text-sm font-semibold text-slate-600 hover:text-brand-600 transition-colors">Why Choose Us</a>
+                <a href="#doctors" class="text-sm font-semibold text-slate-600 hover:text-brand-600 transition-colors">Specialists</a>
+                <a href="#sandbox" class="text-sm font-semibold text-slate-600 hover:text-brand-600 transition-colors flex items-center gap-1.5">
+                    <span class="px-1.5 py-0.5 bg-sky-100 text-sky-700 text-[10px] rounded font-bold uppercase">Sandbox</span>
+                    Live Chat Demo
+                </a>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="https://wa.me/1234567890" target="_blank" class="hidden sm:flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-emerald-100 transition-all border border-emerald-100">
+                    <svg class="w-4 h-4 fill-emerald-600" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.864-9.83.002-2.623-1.023-5.09-2.885-6.953C16.588 1.958 14.117 1.15 11.99 1.15c-5.438 0-9.863 4.414-9.867 9.831-.001 1.841.488 3.639 1.417 5.223l-1.01 3.693 3.79-1.011zm13.102-7.493c-.301-.151-1.78-.879-2.056-.979-.275-.1-.475-.151-.675.151-.2.301-.775.979-.95 1.18-.175.201-.35.226-.651.075-1.127-.565-1.957-.965-2.731-2.292-.612-1.05-.192-1.613-.08-1.77.103-.141.226-.271.328-.393.101-.122.151-.202.226-.352.075-.15.038-.276-.019-.376-.056-.1-.475-1.144-.651-1.564-.171-.41-.344-.354-.475-.36l-.403-.008c-.141 0-.366.052-.558.261-.192.21-.734.717-.734 1.748 0 1.031.75 2.028.854 2.167.104.139 1.478 2.257 3.58 3.167.5.216.89.345 1.196.443.502.16 1.06.131 1.461.071.447-.066 1.385-.566 1.58-.112.195.454.195.842.14 1.011-.055.169-.2.301-.501.452z"/>
+                    </svg>
+                    <span>Instant WhatsApp</span>
+                </a>
+                <button onclick="openBookingModal()" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-lg shadow-brand-200 transition-all active:scale-95 montserrat-font flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    Consult Now
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative overflow-hidden bg-gradient-to-b from-[#f3f9fe] via-white to-white border-b border-slate-100/50">
+        <!-- Abstract fading blue circles -->
+        <div class="absolute top-1/2 left-0 w-[500px] h-[500px] bg-brand-200/25 rounded-full filter blur-[120px] -z-10 -translate-y-1/2"></div>
+        <div class="absolute bottom-0 right-0 w-[600px] h-[600px] bg-sky-100/60 rounded-full filter blur-[140px] -z-10 translate-y-1/3"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center md:h-[500px] py-12 lg:py-0">
+                
+                <!-- Left Content Area -->
+                <div class="lg:col-span-7 flex flex-col justify-center space-y-6 text-center lg:text-left relative z-10">
+                    <div class="inline-flex items-center gap-2 bg-white border border-brand-100 text-brand-700 px-3 py-1.5 rounded-full text-xs font-semibold self-center lg:self-start shadow-sm">
+                        <span class="flex h-2 w-2 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        Verified Digital Outpatient Clinic &bull; MCI Certified Doctors
+                    </div>
+                    
+                    <h1 class="text-4xl sm:text-5xl lg:text-[46px] font-extrabold text-slate-900 leading-[1.15] tracking-tight">
+                        Skip waiting lines. <br class="hidden sm:inline">
+                        <span class="bg-gradient-to-r from-brand-600 via-sky-500 to-indigo-600 bg-clip-text text-transparent font-poppins">Consult premium doctors online.</span>
+                    </h1>
+                    
+                    <p class="text-slate-600 text-base sm:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
+                        Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                        <button onclick="openBookingModal()" class="w-full sm:w-auto bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-brand-200 hover:shadow-brand-300 transition-all hover:-translate-y-0.5 active:translate-y-0 text-base tracking-wide flex items-center justify-center gap-3 montserrat-font">
+                            <span>Start Private Session</span>
+                            <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                        <a href="#sandbox" class="w-full sm:w-auto flex items-center justify-center gap-2 text-slate-700 hover:text-brand-600 font-bold px-6 py-3 transition-colors text-sm border border-slate-200/80 bg-white rounded-2xl hover:bg-slate-50 shadow-sm">
+                            <span>Try Free Live Chat Demo</span>
+                        </a>
+                    </div>
+                    
+                    <!-- Live Stats Dynamic Grid -->
+                    <div class="grid grid-cols-3 gap-6 pt-4 border-t border-slate-100 max-w-md mx-auto lg:mx-0">
+                        <div>
+                            <span class="block text-xl sm:text-2xl font-extrabold text-slate-900" id="live-average-wait">4m</span>
+                            <span class="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">Average Wait</span>
+                        </div>
+                        <div class="border-x border-slate-100 px-4">
+                            <span class="block text-xl sm:text-2xl font-extrabold text-slate-900" id="live-consults-counter">258,410</span>
+                            <span class="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">Sessions Done</span>
+                        </div>
+                        <div>
+                            <span class="block text-xl sm:text-2xl font-extrabold text-slate-900">4.96★</span>
+                            <span class="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">Clarity Score</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Hero Graphics (Modern Telehealth UI Widget Simulator) -->
+                <div class="lg:col-span-5 relative hidden lg:flex justify-center items-center">
+                    <div class="w-full max-w-[420px] aspect-[4/5] bg-white border border-slate-100 rounded-[32px] shadow-2xl p-6 relative overflow-hidden animate-float">
+                        <!-- Upper Header Interface of Virtual Widget -->
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                            <div class="flex items-center gap-3">
+                                <span class="relative flex h-3.5 w-3.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span>
+                                </span>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-800">CareFirst Digital Hub</h4>
+                                    <p class="text-[10px] text-slate-400 font-medium">Auto-connecting you</p>
+                                </div>
+                            </div>
+                            <span class="text-[10px] bg-brand-50 text-brand-700 px-2 py-1 rounded-lg font-bold">Encrypted Connection</span>
+                        </div>
+
+                        <!-- Real-time consultation queue mock -->
+                        <div class="space-y-4">
+                            <div class="bg-[#fafcfe] border border-slate-50 rounded-2xl p-3 flex gap-3">
+                                <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">
+                                    MD
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-bold text-slate-800 truncate">Cardiology Diagnostics</span>
+                                        <span class="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-md font-bold whitespace-nowrap">1 min ago</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 mt-1">Matched with Dr. Evelyn Sterling</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-tr from-brand-500 to-indigo-600 text-white rounded-2xl p-4 shadow-lg shadow-brand-100 relative overflow-hidden">
+                                <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-white/10 rounded-full"></div>
+                                <h5 class="text-xs font-extrabold tracking-wide uppercase text-brand-100 mb-1">Interactive Sandbox</h5>
+                                <p class="text-xs leading-relaxed text-white">Scroll down to use our clinical bot simulation right away before final checkout.</p>
+                                <a href="#sandbox" class="inline-flex items-center gap-1.5 text-[10px] font-bold bg-white text-brand-800 px-3 py-1.5 rounded-xl mt-3 hover:bg-slate-50 transition-colors">
+                                    <span>Try Sandbox Chat</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7"/></svg>
+                                </a>
+                            </div>
+
+                            <!-- Live Counter Chart Mockup -->
+                            <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/50">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold text-slate-800">Dynamic Load Metrics</span>
+                                    <span class="text-[10px] text-emerald-600 font-bold">Stable</span>
+                                </div>
+                                <div class="flex items-end gap-2.5 h-16 pt-2">
+                                    <div class="bg-brand-100 w-full rounded-t-lg h-[35%]"></div>
+                                    <div class="bg-brand-200 w-full rounded-t-lg h-[50%]"></div>
+                                    <div class="bg-brand-300 w-full rounded-t-lg h-[68%]"></div>
+                                    <div class="bg-brand-400 w-full rounded-t-lg h-[82%]"></div>
+                                    <div class="bg-brand-500 w-full rounded-t-lg h-[95%] animate-pulse"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Specialities Panel -->
+    <section id="specialities" class="py-24 bg-white relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
+                <div>
+                    <span class="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">Medical Council Specialties</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">Consult Verified Specialists</h2>
+                    <p class="text-slate-500 mt-2 max-w-xl text-sm sm:text-base">Meticulously selected doctors offering immediate 1-on-1 virtual appointments across crucial health realms.</p>
+                </div>
+                <!-- Control Buttons -->
+                <div class="flex gap-2.5 mt-4 md:mt-0">
+                    <button onclick="scrollSlider('specialities-slider', -1)" class="w-12 h-12 rounded-full border border-slate-200 hover:border-brand-500 hover:bg-brand-50 text-slate-600 hover:text-brand-600 flex items-center justify-center transition-all focus:outline-none shadow-sm active:scale-95" aria-label="Previous">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button onclick="scrollSlider('specialities-slider', 1)" class="w-12 h-12 rounded-full border border-slate-200 hover:border-brand-500 hover:bg-brand-50 text-slate-600 hover:text-brand-600 flex items-center justify-center transition-all focus:outline-none shadow-sm active:scale-95" aria-label="Next">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scrollable Cards Container -->
+            <div id="specialities-slider" class="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6">
+                
+                <!-- Speciality Card 1 -->
+                <div class="flex-shrink-0 w-[290px] bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:shadow-brand-100/40 hover:border-brand-200 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer" onclick="openBookingModal('General Physician')">
+                    <div class="w-14 h-14 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-1">General Physician</h3>
+                    <p class="text-xs text-slate-400 mb-6">Fever, cough, metabolic issues, routine diagnoses</p>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold block">Consultation Fee</span>
+                            <span class="text-xl font-extrabold text-slate-900">₹699</span>
+                        </div>
+                        <span class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl group-hover:from-brand-700 group-hover:to-brand-600 transition-all shadow-md shadow-brand-100">Consult</span>
+                    </div>
+                </div>
+
+                <!-- Speciality Card 2 -->
+                <div class="flex-shrink-0 w-[290px] bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:shadow-brand-100/40 hover:border-brand-200 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer" onclick="openBookingModal('Medicine Specialist')">
+                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-1">Medicine Specialist</h3>
+                    <p class="text-xs text-slate-400 mb-6">Internal organ therapy, chronic disease plans</p>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold block">Consultation Fee</span>
+                            <span class="text-xl font-extrabold text-slate-900">₹699</span>
+                        </div>
+                        <span class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl group-hover:from-brand-700 group-hover:to-brand-600 transition-all shadow-md shadow-brand-100">Consult</span>
+                    </div>
+                </div>
+
+                <!-- Speciality Card 3 -->
+                <div class="flex-shrink-0 w-[290px] bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:shadow-brand-100/40 hover:border-brand-200 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer" onclick="openBookingModal('Sexologist')">
+                    <div class="w-14 h-14 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-1">Sexologist</h3>
+                    <p class="text-xs text-slate-400 mb-6">Confidential therapy, private relationship support</p>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold block">Consultation Fee</span>
+                            <span class="text-xl font-extrabold text-slate-900">₹699</span>
+                        </div>
+                        <span class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl group-hover:from-brand-700 group-hover:to-brand-600 transition-all shadow-md shadow-brand-100">Consult</span>
+                    </div>
+                </div>
+
+                <!-- Speciality Card 4 -->
+                <div class="flex-shrink-0 w-[290px] bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:shadow-brand-100/40 hover:border-brand-200 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer" onclick="openBookingModal('Gynaecologist')">
+                    <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-1">Gynaecologist</h3>
+                    <p class="text-xs text-slate-400 mb-6">Menstruation parameters, maternal and PCOS advice</p>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold block">Consultation Fee</span>
+                            <span class="text-xl font-extrabold text-slate-900">₹699</span>
+                        </div>
+                        <span class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl group-hover:from-brand-700 group-hover:to-brand-600 transition-all shadow-md shadow-brand-100">Consult</span>
+                    </div>
+                </div>
+
+                <!-- Speciality Card 5 -->
+                <div class="flex-shrink-0 w-[290px] bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:shadow-brand-100/40 hover:border-brand-200 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer" onclick="openBookingModal('Endocrinologist')">
+                    <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-1">Endocrinologist</h3>
+                    <p class="text-xs text-slate-400 mb-6">Thyroid diagnostics, hormone optimization plans</p>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold block">Consultation Fee</span>
+                            <span class="text-xl font-extrabold text-slate-900">₹699</span>
+                        </div>
+                        <span class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl group-hover:from-brand-700 group-hover:to-brand-600 transition-all shadow-md shadow-brand-100">Consult</span>
+                    </div>
+                </div>
+
+                <!-- Speciality Card 6 -->
+                <div class="flex-shrink-0 w-[290px] bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:shadow-brand-100/40 hover:border-brand-200 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer" onclick="openBookingModal('General Surgeon')">
+                    <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-1">General Surgeon</h3>
+                    <p class="text-xs text-slate-400 mb-6">Post-op counseling, minor outpatient assessment</p>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold block">Consultation Fee</span>
+                            <span class="text-xl font-extrabold text-slate-900">₹699</span>
+                        </div>
+                        <span class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl group-hover:from-brand-700 group-hover:to-brand-600 transition-all shadow-md shadow-brand-100">Consult</span>
+                    </div>
+                </div>
+
+                <!-- Speciality Card 7 -->
+                <div class="flex-shrink-0 w-[290px] bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:shadow-brand-100/40 hover:border-brand-200 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer" onclick="openBookingModal('Psychiatrist')">
+                    <div class="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-1">Psychiatrist</h3>
+                    <p class="text-xs text-slate-400 mb-6">Mental diagnoses, emotional therapy support</p>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold block">Consultation Fee</span>
+                            <span class="text-xl font-extrabold text-slate-900">₹699</span>
+                        </div>
+                        <span class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl group-hover:from-brand-700 group-hover:to-brand-600 transition-all shadow-md shadow-brand-100">Consult</span>
+                    </div>
+                </div>
+
+                <!-- Speciality Card 8 -->
+                <div class="flex-shrink-0 w-[290px] bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:shadow-brand-100/40 hover:border-brand-200 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer" onclick="openBookingModal('Gastroenterologist')">
+                    <div class="w-14 h-14 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-1">Gastroenterologist</h3>
+                    <p class="text-xs text-slate-400 mb-6">Severe acidity, IBS, gut microbiome tracking</p>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold block">Consultation Fee</span>
+                            <span class="text-xl font-extrabold text-slate-900">₹699</span>
+                        </div>
+                        <span class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl group-hover:from-brand-700 group-hover:to-brand-600 transition-all shadow-md shadow-brand-100">Consult</span>
+                    </div>
+                </div>
+
+                <!-- Speciality Card 9 -->
+                <div class="flex-shrink-0 w-[290px] bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:shadow-brand-100/40 hover:border-brand-200 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer" onclick="openBookingModal('Mental Health')">
+                    <div class="w-14 h-14 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-1">Mental Health</h3>
+                    <p class="text-xs text-slate-400 mb-6">Daily counseling, anxiety reduction frameworks</p>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold block">Consultation Fee</span>
+                            <span class="text-xl font-extrabold text-slate-900 flex items-center gap-1.5">₹799 <span class="text-[9px] bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded font-extrabold">PREMIUM</span></span>
+                        </div>
+                        <span class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl group-hover:from-brand-700 group-hover:to-brand-600 transition-all shadow-md shadow-brand-100">Consult</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Are you facing any of these concerns? -->
+    <section id="concerns" class="py-24 bg-[#fafcfe] border-y border-slate-100/80 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-6">
+                <div>
+                    <span class="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">Live Symptom Matching</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">Identify Your Clinical Symptoms</h2>
+                    <p class="text-slate-500 mt-2 max-w-xl text-sm sm:text-base">Search or click common issues to seamlessly trigger the correct medical specialist matching engine.</p>
+                </div>
+                
+                <!-- Modern Search Bar Interface -->
+                <div class="w-full lg:max-w-md relative">
+                    <div class="relative">
+                        <input type="text" id="symptom-search-input" onkeyup="filterSymptoms()" placeholder="Type symptom (e.g., Fever, Cough, PCOS)..." class="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 rounded-2xl px-5 py-3.5 pl-12 text-sm focus:outline-none shadow-sm transition-all text-slate-800">
+                        <svg class="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Symptom Cards Container -->
+            <div id="concerns-slider" class="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6">
+                
+                <!-- Symptoms List Javascript Generator with High Quality Image Placeholders -->
+                <script>
+                    const concernsList = [
+                        { name: "Cough and cold", key: "cough", specialist: "General Physician", count: "12 Doctors Online" },
+                        { name: "Running nose", key: "nose", specialist: "General Physician", count: "12 Doctors Online" },
+                        { name: "Fever", key: "fever", specialist: "General Physician", count: "12 Doctors Online" },
+                        { name: "IBS & Constipation", key: "ibs", specialist: "Gastroenterologist", count: "4 Doctors Online" },
+                        { name: "PCOS/PMOS Issue", key: "pcos", specialist: "Gynaecologist", count: "7 Doctors Online" },
+                        { name: "Erectile dysfunction", key: "ed", specialist: "Sexologist", count: "5 Doctors Online" },
+                        { name: "Premature Ejaculation", key: "pe", specialist: "Sexologist", count: "5 Doctors Online" },
+                        { name: "Urine Infection", key: "uti", specialist: "General Surgeon", count: "3 Doctors Online" },
+                        { name: "Weight Loss", key: "weight", specialist: "Endocrinologist", count: "6 Doctors Online" },
+                        { name: "Depression or Anxiety", key: "anxiety", specialist: "Mental Health", count: "8 Doctors Online" },
+                        { name: "Panic Attack", key: "panic", specialist: "Psychiatrist", count: "5 Doctors Online" }
+                    ];
+
+                    document.write(concernsList.map((c, idx) => `
+                        <div id="symptom-card-${idx}" class="symptom-card flex-shrink-0 w-80 bg-white border border-slate-100 rounded-[28px] p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between snap-start" data-name="${c.name.toLowerCase()} ${c.specialist.toLowerCase()}">
+                            <div>
+                                <!-- Image Placeholder Container -->
+                                <div class="w-full h-36 bg-brand-50 rounded-2xl overflow-hidden mb-4 relative flex items-center justify-center border border-brand-100/55 group/img">
+                                    <img src="https://placehold.co/400x250/e0f2fe/075985?text=${encodeURIComponent(c.name)}" onerror="this.src='https://placehold.co/400x250/e0f2fe/075985?text=Symptom'" alt="${c.name}" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300">
+                                    <div class="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm text-[8px] text-slate-500 px-2 py-0.5 rounded font-mono font-bold tracking-wider border border-slate-100 shadow-sm uppercase">Replace Asset</div>
+                                </div>
+
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-base font-bold text-slate-800 font-poppins">${c.name}</h3>
+                                    <span class="text-[9px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg whitespace-nowrap shrink-0">
+                                        ${c.count}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-brand-600 font-semibold mb-4">Recommended: ${c.specialist}</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3 mt-2 border-t border-slate-100 pt-4">
+                                <button onclick="openBookingModal('${c.specialist}')" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-xs font-bold py-3 px-4 rounded-xl transition-all shadow-md shadow-brand-100 active:scale-95">
+                                    Consult
+                                </button>
+                                <a href="https://wa.me/1234567890?text=Hi%20CareFirst,%20I%20am%20facing%20${encodeURIComponent(c.name)}%20and%20would%20like%20to%20connect%20with%20a%20doctor." target="_blank" class="border border-emerald-100 bg-emerald-50/55 hover:bg-emerald-50 text-emerald-800 text-xs font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 active:scale-95">
+                                    <svg class="w-3.5 h-3.5 fill-emerald-600" viewBox="0 0 24 24">
+                                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.864-9.83.002-2.623-1.023-5.09-2.885-6.953C16.588 1.958 14.117 1.15 11.99 1.15c-5.438 0-9.863 4.414-9.867 9.831-.001 1.841.488 3.639 1.417 5.223l-1.01 3.693 3.79-1.011zm13.102-7.493c-.301-.151-1.78-.879-2.056-.979-.275-.1-.475-.151-.675.151-.2.301-.775.979-.95 1.18-.175.201-.35.226-.651.075-1.127-.565-1.957-.965-2.731-2.292-.612-1.05-.192-1.613-.08-1.77.103-.141.226-.271.328-.393.101-.122.151-.202.226-.352.075-.15.038-.276-.019-.376-.056-.1-.475-1.144-.651-1.564-.171-.41-.344-.354-.475-.36l-.403-.008c-.141 0-.366.052-.558.261-.192.21-.734.717-.734 1.748 0 1.031.75 2.028.854 2.167.104.139 1.478 2.257 3.58 3.167.5.216.89.345 1.196.443.502.16 1.06.131 1.461.071.447-.066 1.385-.566 1.58-.112.195.454.195.842.14 1.011-.055.169-.2.301-.501.452z"/>
+                                    </svg>
+                                    <span>WhatsApp</span>
+                                </a>
+                            </div>
+                        </div>
+                    `).join(''));
+                </script>
+
+            </div>
+            
+            <p id="symptom-empty-message" class="hidden text-center text-slate-400 py-12 font-medium">No symptoms match your search. Try searching for "Fever", "Cough", "PCOS", or connect directly to a General Physician.</p>
+        </div>
+    </section>
+
+    <!-- Why Trust Us Section -->
+    <section id="why-trust-us" class="py-24 bg-white relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">Our Quality Standard</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">Why Patients Trust CareFirst</h2>
+                <p class="text-slate-500 mt-2 text-sm sm:text-base">Pioneering safe, encrypted digital diagnostics tied directly with legal medical compliance protocols.</p>
+            </div>
+
+            <!-- Animated Grid Elements -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                
+                <!-- Trust Card 1: Confidentiality -->
+                <div class="bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-blue-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800 font-poppins mb-2">Confidential 1 on 1</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Encrypted high-definition channels keeping medical history strictly confidential between provider and patient.</p>
+                </div>
+
+                <!-- Trust Card 2: Digital Prescriptions -->
+                <div class="bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800 font-poppins mb-2">Digital Prescription</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Instantly download legal e-prescriptions with verified doctor digital stamps accepted at all major pharmacies.</p>
+                </div>
+
+                <!-- Trust Card 3: Understandability Rate -->
+                <div class="bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"/></svg>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800 font-poppins mb-2">98% Clear Rating</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Top clarity scoring where doctors explain diagnostics clearly without complex clinical medical jargon.</p>
+                </div>
+
+                <!-- Trust Card 4: Instant Help -->
+                <div class="bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800 font-poppins mb-2">Instant Prescription</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">No clinic travel time or delays. Connect, get examined, and receive help in less than 10 minutes.</p>
+                </div>
+
+                <!-- Trust Card 5: AddyFitness Sync Segment (Animated Card) -->
+                <div class="bg-gradient-to-tr from-[#0284c7] to-[#4338ca] border border-brand-400 rounded-[28px] p-6 text-white shadow-xl hover:shadow-brand-200/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group flex flex-col justify-between">
+                    <div class="absolute -right-8 -bottom-8 w-28 h-28 bg-white/10 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
+                    <div>
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="w-10 h-10 bg-white/15 text-white rounded-2xl flex items-center justify-center">
+                                <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3.05 11H5M19 11h1.95M12 3v18M12 3l3 3m-3-3L9 6m3 15l3-3m-3 3l-3-3" />
+                                </svg>
+                            </div>
+                            <!-- Mock physiological status widget -->
+                            <div class="flex items-center gap-1 bg-emerald-500/80 px-2 py-0.5 rounded text-[9px] font-bold">
+                                <span>74 bpm</span>
+                            </div>
+                        </div>
+                        <h3 class="text-base font-bold font-poppins mb-1.5">AddyFitness Sync</h3>
+                        <p class="text-[11px] text-slate-100 leading-relaxed font-normal">Coordinated therapeutic routines linking physical therapy and diet alongside prescription metrics with <span class="underline">www.addyfitness.com</span>.</p>
+                    </div>
+                    <a href="https://www.addyfitness.com" target="_blank" class="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider bg-white text-indigo-700 px-4 py-2 rounded-xl hover:bg-indigo-50 transition-all mt-4 self-start shadow-md">
+                        <span>Sync Fitness</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Medical Council Section -->
+    <section id="doctors" class="py-24 bg-slate-50 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">Our Digital Council</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">Meet Active Registered Doctors</h2>
+                <p class="text-slate-500 mt-2 text-sm sm:text-base">Each panelist maintains a pristine license registration and years of dedicated clinical expertise.</p>
+            </div>
+
+            <!-- Doctor Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- Doctor 1 -->
+                <div class="bg-white border border-slate-100 rounded-[28px] p-6 text-center shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300">
+                    <div class="relative w-24 h-24 mx-auto mb-4">
+                        <div class="w-full h-full rounded-full p-1 bg-gradient-to-tr from-brand-500 to-indigo-400">
+                            <!-- Image Placeholder for Doctor Photo -->
+                            <div class="w-full h-full bg-slate-100 rounded-full overflow-hidden flex items-center justify-center relative border border-white">
+                                <img src="https://placehold.co/150x150/e0f2fe/075985?text=Dr.+Marcus" alt="Dr. Marcus Vance" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                        <span class="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <span class="inline-block bg-brand-50 text-brand-700 text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Physiology &amp; General</span>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins">Dr. Marcus Vance</h3>
+                    <p class="text-xs text-slate-400">MD, FACC &bull; 12+ Years Experience</p>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-emerald-600 font-bold flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Live Online
+                        </span>
+                        <button onclick="openBookingModal('General Physician')" class="bg-slate-50 hover:bg-brand-500 hover:text-white border border-slate-200 hover:border-brand-500 text-slate-700 font-bold px-4 py-2 rounded-xl transition-all text-xs">
+                            Consult
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Doctor 2 -->
+                <div class="bg-white border border-slate-100 rounded-[28px] p-6 text-center shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300">
+                    <div class="relative w-24 h-24 mx-auto mb-4">
+                        <div class="w-full h-full rounded-full p-1 bg-gradient-to-tr from-emerald-500 to-teal-400">
+                            <!-- Image Placeholder for Doctor Photo -->
+                            <div class="w-full h-full bg-slate-100 rounded-full overflow-hidden flex items-center justify-center relative border border-white">
+                                <img src="https://placehold.co/150x150/e2fbf0/047857?text=Dr.+Evelyn" alt="Dr. Evelyn Sterling" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                        <span class="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <span class="inline-block bg-emerald-50 text-emerald-700 text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Gynaecologist</span>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins">Dr. Evelyn Sterling</h3>
+                    <p class="text-xs text-slate-400">MS, DNB &bull; 8+ Years Experience</p>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-emerald-600 font-bold flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Live Online
+                        </span>
+                        <button onclick="openBookingModal('Gynaecologist')" class="bg-slate-50 hover:bg-brand-500 hover:text-white border border-slate-200 hover:border-brand-500 text-slate-700 font-bold px-4 py-2 rounded-xl transition-all text-xs">
+                            Consult
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Doctor 3 -->
+                <div class="bg-white border border-slate-100 rounded-[28px] p-6 text-center shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300">
+                    <div class="relative w-24 h-24 mx-auto mb-4">
+                        <div class="w-full h-full rounded-full p-1 bg-gradient-to-tr from-pink-500 to-pink-400">
+                            <!-- Image Placeholder for Doctor Photo -->
+                            <div class="w-full h-full bg-slate-100 rounded-full overflow-hidden flex items-center justify-center relative border border-white">
+                                <img src="https://placehold.co/150x150/fce7f3/be185d?text=Dr.+Adrian" alt="Dr. Adrian Hayes" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                        <span class="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <span class="inline-block bg-pink-50 text-pink-700 text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Sexology &amp; Urology</span>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins">Dr. Adrian Hayes</h3>
+                    <p class="text-xs text-slate-400">MBBS, MS &bull; 15+ Years Experience</p>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-emerald-600 font-bold flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Live Online
+                        </span>
+                        <button onclick="openBookingModal('Sexologist')" class="bg-slate-50 hover:bg-brand-500 hover:text-white border border-slate-200 hover:border-brand-500 text-slate-700 font-bold px-4 py-2 rounded-xl transition-all text-xs">
+                            Consult
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Doctor 4 -->
+                <div class="bg-white border border-slate-100 rounded-[28px] p-6 text-center shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300">
+                    <div class="relative w-24 h-24 mx-auto mb-4">
+                        <div class="w-full h-full rounded-full p-1 bg-gradient-to-tr from-sky-500 to-blue-400">
+                            <!-- Image Placeholder for Doctor Photo -->
+                            <div class="w-full h-full bg-slate-100 rounded-full overflow-hidden flex items-center justify-center relative border border-white">
+                                <img src="https://placehold.co/150x150/e0f2fe/0369a1?text=Dr.+Sarah" alt="Dr. Sarah Jenkins" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                        <span class="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <span class="inline-block bg-sky-50 text-sky-700 text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Clinical Psychiatry</span>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins">Dr. Sarah Jenkins</h3>
+                    <p class="text-xs text-slate-400">PhD, Clinical Psychology &bull; 10+ Years Experience</p>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-emerald-600 font-bold flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Live Online
+                        </span>
+                        <button onclick="openBookingModal('Mental Health')" class="bg-slate-50 hover:bg-brand-500 hover:text-white border border-slate-200 hover:border-brand-500 text-slate-700 font-bold px-4 py-2 rounded-xl transition-all text-xs">
+                            Consult
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how-it-works" class="py-24 bg-white relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">Pristine Operations</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">Three Steps To Connected Care</h2>
+                <p class="text-slate-500 mt-2 text-sm sm:text-base">Engineered for extreme simplicity to bridge patients and registered physicians instantly.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+                <!-- Connect line decoration -->
+                <div class="hidden md:block absolute top-16 left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-brand-100 via-brand-300 to-indigo-100 -z-0"></div>
+
+                <!-- Step 1 -->
+                <div class="bg-[#fafcfe] border border-slate-100 p-8 rounded-[32px] text-center relative z-10 hover:shadow-lg transition-all hover:border-brand-200 group">
+                    <div class="w-14 h-14 bg-brand-500 text-white rounded-2xl flex items-center justify-center font-bold text-lg mx-auto mb-6 shadow-lg shadow-brand-100 group-hover:scale-110 transition-transform">1</div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-2">Select Your Symptom</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-normal">Choose from our specialized fields, or leverage our live filter search tool to map symptoms instantly.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-[#fafcfe] border border-slate-100 p-8 rounded-[32px] text-center relative z-10 hover:shadow-lg transition-all hover:border-brand-200 group">
+                    <div class="w-14 h-14 bg-indigo-500 text-white rounded-2xl flex items-center justify-center font-bold text-lg mx-auto mb-6 shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">2</div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-2">Pay and Connect</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-normal">Submit your health metrics securely in one simplified stage, finalize booking, and immediately join your clinic room queue.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-[#fafcfe] border border-slate-100 p-8 rounded-[32px] text-center relative z-10 hover:shadow-lg transition-all hover:border-brand-200 group">
+                    <div class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center font-bold text-lg mx-auto mb-6 shadow-lg shadow-emerald-100 group-hover:scale-110 transition-transform">3</div>
+                    <h3 class="text-lg font-bold text-slate-800 font-poppins mb-2">Get Prescriptions</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-normal">Download digitally stamped medical orders instantly, request schedules, and coordinate fitness plans with ease.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Sandbox Segment: Interactive Clinical Assistant Sandbox -->
+    <section id="sandbox" class="py-24 bg-slate-50 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Left Details explaining the Sandbox -->
+                <div class="lg:col-span-5 space-y-6">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span> Live Product Sandbox
+                    </span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-[1.2] font-poppins">Try the CareFirst Consultation Simulator</h2>
+                    <p class="text-slate-500 text-sm sm:text-base leading-relaxed">
+                        Test out our patient triage interface right now. Choose a primary health focus, and talk to our interactive assistant below to get clinical mapping, route guidance, and experience our responsive consultation mechanics before booking.
+                    </p>
+                    <div class="space-y-3.5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 text-[10px] font-bold">&check;</div>
+                            <span class="text-xs text-slate-700 font-bold">100% Free Sandbox Session</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 text-[10px] font-bold">&check;</div>
+                            <span class="text-xs text-slate-700 font-bold">See triage recommendations instantaneously</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Interactive Mock-chat widget -->
+                <div class="lg:col-span-7">
+                    <div class="bg-white border border-slate-100 shadow-2xl rounded-[32px] overflow-hidden max-w-xl mx-auto">
+                        <!-- Chat Header -->
+                        <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold relative text-sm">
+                                    CF
+                                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border border-slate-900 rounded-full"></span>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold font-poppins">Clinical Support Bot</h4>
+                                    <p class="text-[9px] text-slate-400 font-medium">Automated Triage Terminal</p>
+                                </div>
+                            </div>
+                            <span class="text-[10px] bg-slate-800 text-indigo-300 px-2 py-1 rounded font-bold uppercase tracking-wider">Demo Sandbox</span>
+                        </div>
+
+                        <!-- Chat Console Output -->
+                        <div id="sandbox-chat-output" class="h-80 overflow-y-auto p-4 space-y-3 scrollbar-hide text-xs bg-[#f8fafc]">
+                            <div class="flex gap-2">
+                                <div class="w-7 h-7 bg-brand-500 text-white rounded-lg flex items-center justify-center font-bold text-[10px] shrink-0">CF</div>
+                                <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-none p-3 max-w-[80%] shadow-sm text-slate-700">
+                                    Hello! Welcome to our Sandbox. What general health concern can I assist you with tracing today? Click one of the instant selections below or type freely.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Option Chips -->
+                        <div class="p-3 bg-white border-t border-slate-100 flex gap-2 overflow-x-auto scrollbar-hide">
+                            <button onclick="sendSandboxChip('Fever & Body Ache')" class="bg-slate-100 hover:bg-brand-500 hover:text-white transition-all text-[11px] font-bold text-slate-600 px-3 py-1.5 rounded-full shrink-0">Fever & Body Ache</button>
+                            <button onclick="sendSandboxChip('PCOS Symptoms')" class="bg-slate-100 hover:bg-brand-500 hover:text-white transition-all text-[11px] font-bold text-slate-600 px-3 py-1.5 rounded-full shrink-0">PCOS Symptoms</button>
+                            <button onclick="sendSandboxChip('Dietary & IBS issue')" class="bg-slate-100 hover:bg-brand-500 hover:text-white transition-all text-[11px] font-bold text-slate-600 px-3 py-1.5 rounded-full shrink-0">Dietary & IBS issue</button>
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="p-3 bg-white border-t border-slate-100 flex gap-2">
+                            <input type="text" id="sandbox-user-input" onkeydown="handleSandboxEnter(event)" placeholder="Type symptom message here..." class="flex-1 bg-slate-50 border border-slate-200 focus:border-brand-500 rounded-xl px-4 py-3 text-xs focus:outline-none">
+                            <button onclick="sendSandboxFreeText()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs px-4 rounded-xl transition-colors">Send</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits of Online Consultation -->
+    <section class="py-24 bg-white relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Left Decorative Graphic Dashboard Panel -->
+                <div class="lg:col-span-5 relative hidden lg:flex justify-center items-center">
+                    <div class="w-96 h-96 rounded-full bg-brand-100/40 absolute filter blur-[80px]"></div>
+                    <div class="bg-white p-8 rounded-[32px] shadow-2xl border border-slate-100/80 relative z-10 w-full max-w-[380px] space-y-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></div>
+                            <span class="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase">Active Clinic Statistics</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+                                    <span>Verified Doctor Council</span>
+                                    <span>100% Passed</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-gradient-to-r from-brand-500 to-sky-400 h-full rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+                                    <span>Prescription Turnaround</span>
+                                    <span>99.4% Rate</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-gradient-to-r from-brand-500 to-sky-400 h-full rounded-full" style="width: 99.4%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+                                    <span>Clinical Encryptions</span>
+                                    <span>AES-256 Verified</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-gradient-to-r from-brand-500 to-sky-400 h-full rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-2xl text-[11px] text-slate-500 leading-relaxed italic">
+                            "Connecting with an Endocrinologist took exactly 4 minutes. CareFirst makes consulting effortless."
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right detailed benefit bullets -->
+                <div class="lg:col-span-7 space-y-8">
+                    <div>
+                        <span class="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">Our Advantage Matrix</span>
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">Telemedicine Optimized For Absolute Patient Comfort</h2>
+                        <p class="text-slate-500 mt-2 text-sm sm:text-base leading-relaxed">We bypass physical clinic friction by combining modern technological ease with verified practitioners.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        
+                        <!-- Benefit 1 -->
+                        <div class="flex gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 font-poppins mb-1.5 font-semibold">24×7 Expert Consultations</h3>
+                                <p class="text-xs text-slate-500 leading-relaxed">Connect with certified doctors and healthcare experts anytime through instant chat or scheduled video consultations.</p>
+                            </div>
+                        </div>
+
+                        <!-- Benefit 2 -->
+                        <div class="flex gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 font-poppins mb-1.5 font-semibold">Quick &amp; Hassle-Free</h3>
+                                <p class="text-xs text-slate-500 leading-relaxed">Book your consultation in minutes and receive expert medical guidance from the comfort of your home.</p>
+                            </div>
+                        </div>
+
+                        <!-- Benefit 3 -->
+                        <div class="flex gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 font-poppins mb-1.5 font-semibold">Secure &amp; Confidential</h3>
+                                <p class="text-xs text-slate-500 leading-relaxed">Your health records, conversations, and prescriptions are protected with complete privacy and secure encryption.</p>
+                            </div>
+                        </div>
+
+                        <!-- Benefit 4 -->
+                        <div class="flex gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-.553.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 font-poppins mb-1.5 font-semibold">Clinic-Like Experience</h3>
+                                <p class="text-xs text-slate-500 leading-relaxed">Enjoy personalized one-on-one video consultations that provide the same attention and care as an in-person clinic visit.</p>
+                            </div>
+                        </div>
+
+                        <!-- Benefit 5 -->
+                        <div class="flex gap-4 sm:col-span-2">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex-shrink-0 flex items-center justify-center shadow-sm">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 font-poppins mb-1.5 font-semibold">Digital Prescription &amp; Follow-Up</h3>
+                                <p class="text-xs text-slate-500 leading-relaxed">Receive a verified digital prescription along with complimentary follow-up support to ensure your treatment stays on track.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-24 bg-slate-50 relative border-t border-slate-100">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">Patient Queries</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">Frequently Asked Questions</h2>
+                <p class="text-slate-500 mt-2 text-sm sm:text-base">Everything you need to know about credentials, billing policies, and medical legality.</p>
+            </div>
+
+            <!-- FAQ Accordion Layout -->
+            <div class="space-y-4">
+                
+                <!-- FAQ Item 1 -->
+                <div class="border border-slate-200/60 bg-white rounded-3xl overflow-hidden shadow-sm transition-all duration-300">
+                    <button onclick="toggleFAQ(this)" class="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors text-left focus:outline-none">
+                        <span class="font-bold text-slate-800 text-sm sm:text-base font-poppins">What credentials do CareFirst doctors hold?</span>
+                        <svg class="w-5 h-5 text-slate-400 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out bg-white">
+                        <div class="p-6 text-xs sm:text-sm text-slate-500 leading-relaxed border-t border-slate-100">
+                            Every single general practitioner and clinical specialist on our portal is carefully vetted against national medical licensing databases. They hold verified MBBS, MD, MS, or PhD qualifications with extensive experience in physical outpatient facilities.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div class="border border-slate-200/60 bg-white rounded-3xl overflow-hidden shadow-sm transition-all duration-300">
+                    <button onclick="toggleFAQ(this)" class="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors text-left focus:outline-none">
+                        <span class="font-bold text-slate-800 text-sm sm:text-base font-poppins">Is my private digital prescription valid at physical pharmacies?</span>
+                        <svg class="w-5 h-5 text-slate-400 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out bg-white">
+                        <div class="p-6 text-xs sm:text-sm text-slate-500 leading-relaxed border-t border-slate-100">
+                            Absolutely. Your downloadable consultation prescription contains direct digital registry signatures, official clinic stamps, and registered MCI/council license numbers, making them completely compliant with national telemedicine mandates and legal pharmacy regulations.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 3 -->
+                <div class="border border-slate-200/60 bg-white rounded-3xl overflow-hidden shadow-sm transition-all duration-300">
+                    <button onclick="toggleFAQ(this)" class="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors text-left focus:outline-none">
+                        <span class="font-bold text-slate-800 text-sm sm:text-base font-poppins">How long does it take to connect with an active online doctor?</span>
+                        <svg class="w-5 h-5 text-slate-400 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out bg-white">
+                        <div class="p-6 text-xs sm:text-sm text-slate-500 leading-relaxed border-t border-slate-100">
+                            Our average triage and connection speed is under 10 minutes. Based on specialty workloads, we automatically pipeline you with secondary on-call clinicians if your primary provider is handling an active video consultation.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 4 -->
+                <div class="border border-slate-200/60 bg-white rounded-3xl overflow-hidden shadow-sm transition-all duration-300">
+                    <button onclick="toggleFAQ(this)" class="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors text-left focus:outline-none">
+                        <span class="font-bold text-slate-800 text-sm sm:text-base font-poppins">How does the AddyFitness physical lifestyle syncing work?</span>
+                        <svg class="w-5 h-5 text-slate-400 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out bg-white">
+                        <div class="p-6 text-xs sm:text-sm text-slate-500 leading-relaxed border-t border-slate-100">
+                            When you opt-in for our complementary fitness plan syncing during the booking process, your dynamic metabolic diagnostic recommendations are linked securely with exercise regimes structured by the physiologists at www.addyfitness.com. This bridges pharmacological therapy and metabolic movement seamlessly.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-24 bg-white relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">Verified Testimonials</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">Feedback From Our Patients</h2>
+                <p class="text-slate-500 mt-2 text-sm sm:text-base">Discover how other individuals managed chronic concerns, requested immediate general help, and synced physical lifestyle regimes.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <!-- Feedback 1 -->
+                <div class="bg-[#fafcfe] border border-slate-100 rounded-[32px] p-8 shadow-sm flex flex-col justify-between hover:shadow-lg transition-shadow">
+                    <div>
+                        <div class="flex gap-1 text-amber-400 mb-6 text-sm">
+                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed italic mb-6">"Connecting with Dr. Sterling was flawless. She listened patiently without any rushing and diagnosed my PCOS triggers within a rapid 15-minute consultation. Received the prescription PDF instantly on my dashboard!"</p>
+                    </div>
+                    <div class="flex items-center gap-3 border-t border-slate-100 pt-4">
+                        <div class="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs">SP</div>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800 font-poppins">Shreya Patel</h4>
+                            <p class="text-[9px] text-slate-400">Consulted Gynaecologist</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback 2 -->
+                <div class="bg-[#fafcfe] border border-slate-100 rounded-[32px] p-8 shadow-sm flex flex-col justify-between hover:shadow-lg transition-shadow">
+                    <div>
+                        <div class="flex gap-1 text-amber-400 mb-6 text-sm">
+                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed italic mb-6">"The AddyFitness coordination feature is exceptional. After consulting Dr. Vance regarding my cardiology concerns, the platform mapped customized home-cardio drills and general fitness tasks directly corresponding to my heart parameters."</p>
+                    </div>
+                    <div class="flex items-center gap-3 border-t border-slate-100 pt-4">
+                        <div class="w-10 h-10 bg-brand-50 rounded-full flex items-center justify-center text-brand-700 font-bold text-xs">RK</div>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800 font-poppins">Rishi Kapoor</h4>
+                            <p class="text-[9px] text-slate-400">Consulted General Physician</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback 3 -->
+                <div class="bg-[#fafcfe] border border-slate-100 rounded-[32px] p-8 shadow-sm flex flex-col justify-between hover:shadow-lg transition-shadow">
+                    <div>
+                        <div class="flex gap-1 text-amber-400 mb-6 text-sm">
+                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed italic mb-6">"Conducting my regular therapy sessions via video from my office desk saves hours of transit time. Dr. Jenkins helped me navigate severe panic patterns using direct, practical mental wellness plans."</p>
+                    </div>
+                    <div class="flex items-center gap-3 border-t border-slate-100 pt-4">
+                        <div class="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center text-teal-700 font-bold text-xs">AL</div>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800 font-poppins">Amit Lal</h4>
+                            <p class="text-[9px] text-slate-400">Consulted Mental Health Expert</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW Streamlined Multi-Step Consultation Modal Simulator -->
+    <div id="booking-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-all duration-300">
+        <div class="bg-white w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-100 p-6 sm:p-8 transform scale-95 opacity-0 transition-all duration-300 overflow-y-auto max-h-[90vh] scrollbar-hide" id="booking-modal-card">
+            
+            <!-- Modal Header (Hides when Live Consultation Starts) -->
+            <div id="modal-header-block" class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 font-poppins">Direct Doctor Consultation</h3>
+                    <p class="text-xs text-slate-500 mt-1">Fill out the quick patient parameters below to pay and connect instantly.</p>
+                </div>
+                <button onclick="closeBookingModal()" class="w-9 h-9 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-all focus:outline-none" aria-label="Close">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Booking Form -->
+            <form id="consultation-form" onsubmit="submitSimplifiedBooking(event)" class="space-y-4">
+                
+                <!-- Full Name Field -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Patient Full Name</label>
+                    <input type="text" id="booking-name" placeholder="John Doe" required class="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium">
+                </div>
+
+                <!-- Phone Field -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Mobile Number</label>
+                    <input type="tel" id="booking-phone" placeholder="9876543210" required class="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium">
+                </div>
+
+                <!-- Grid layout for Age, Height, Weight -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Age</label>
+                        <input type="number" id="booking-age" placeholder="28" required min="1" max="120" class="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-3 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Height (cm)</label>
+                        <input type="number" id="booking-height" placeholder="175" required class="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-3 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Weight (kg)</label>
+                        <input type="number" id="booking-weight" placeholder="70" required class="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-3 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium">
+                    </div>
+                </div>
+
+                <!-- Concern / Specialty Dropdown -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Choose Medical Focus</label>
+                    <select id="booking-speciality" class="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 focus:outline-none transition-all">
+                        <option value="General Physician">General Physician (₹699)</option>
+                        <option value="Medicine Specialist">Medicine Specialist (₹699)</option>
+                        <option value="Sexologist">Sexologist (₹699)</option>
+                        <option value="Gynaecologist">Gynaecologist (₹699)</option>
+                        <option value="Endocrinologist">Endocrinologist (₹699)</option>
+                        <option value="General Surgeon">General Surgeon (₹699)</option>
+                        <option value="Psychiatrist">Psychiatrist (₹699)</option>
+                        <option value="Gastroenterologist">Gastroenterologist (₹699)</option>
+                        <option value="Mental Health">Mental Health (₹799)</option>
+                    </select>
+                </div>
+
+                <!-- Symptom Description Textarea -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Briefly Describe Your Concern</label>
+                    <textarea id="booking-symptoms" placeholder="Type primary symptom details here (e.g., headache for 3 days, metabolic tracking)..." rows="3" required class="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-xs focus:outline-none transition-all resize-none text-slate-800"></textarea>
+                </div>
+
+                <!-- AddyFitness Sync integration check inside form -->
+                <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex items-start gap-3 mt-2">
+                    <input type="checkbox" id="sync-addy" class="mt-1 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer">
+                    <label for="sync-addy" class="text-[11px] text-indigo-900 leading-relaxed cursor-pointer select-none">
+                        <span class="block font-bold">Synchronize with www.addyfitness.com</span>
+                        Share session parameters to generate custom metabolic lifestyle workout targets automatically alongside clinical care plans.
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-brand-100 hover:shadow-brand-200 transition-all active:scale-95 flex items-center justify-center gap-2 montserrat-font text-xs uppercase tracking-wider mt-4">
+                    <span>Pay & Connect Now</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </form>
+            
+            <!-- Real-time Loading Match Triage Screen -->
+            <div id="booking-loading-message" class="hidden text-center py-8 space-y-4">
+                <div class="relative w-20 h-20 mx-auto">
+                    <div class="animate-spin rounded-full h-20 w-20 border-4 border-brand-500 border-t-transparent"></div>
+                    <div class="absolute inset-0 flex items-center justify-center font-bold text-xs text-brand-600">triage</div>
+                </div>
+                <h4 class="text-lg font-bold text-slate-800 font-poppins">Securing Telehealth Node...</h4>
+                <p class="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">Processing clinic billing and routing patient file to certified medical specialists...</p>
+                <div class="text-[11px] text-indigo-600 font-bold bg-indigo-50 px-3 py-1.5 rounded-full inline-block">Estimated Connection Wait: 3s</div>
+            </div>
+
+            <!-- Simulated Telehealth Interactive Console (Opened on successful submit simulation!) -->
+            <div id="telehealth-room" class="hidden space-y-4">
+                <div class="bg-slate-900 rounded-3xl p-4 sm:p-5 text-white shadow-inner">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <div>
+                                <h4 class="text-xs font-bold" id="telehealth-dr-name">Dr. Marcus Vance</h4>
+                                <p class="text-[9px] text-slate-400">Consultation Room ID: #CF-98541</p>
+                            </div>
+                        </div>
+                        <button onclick="closeBookingModal()" class="text-slate-400 hover:text-white text-xs underline font-bold transition-colors">End Session</button>
+                    </div>
+
+                    <!-- Output console for doctor simulated dialog -->
+                    <div id="telehealth-dialog" class="h-48 overflow-y-auto space-y-3 p-3 bg-slate-950 rounded-2xl text-[11px] scrollbar-hide text-slate-200 font-mono">
+                        <div class="text-slate-400">[System] Patient connected securely. Sharing symptoms...</div>
+                    </div>
+
+                    <!-- Input panel for patient inside mock chat console -->
+                    <div class="mt-3 flex gap-2">
+                        <input type="text" id="telehealth-input" onkeydown="handleTelehealthEnter(event)" placeholder="Ask follow up questions..." class="flex-1 bg-slate-800 border border-slate-700 focus:outline-none focus:border-brand-500 rounded-xl px-3 py-2 text-xs text-white">
+                        <button onclick="sendTelehealthMessage()" class="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-xl font-bold text-xs transition-colors">Send</button>
+                    </div>
+                </div>
+                
+                <!-- Mock Success Actions -->
+                <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex justify-between items-center">
+                    <div class="pr-2">
+                        <h5 class="text-xs font-bold text-emerald-900">Virtual Session Active</h5>
+                        <p class="text-[10px] text-emerald-700 mt-0.5">E-Prescription draft generates immediately on conversation close.</p>
+                    </div>
+                    <button onclick="simulatePrescriptionDownload()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-2 rounded-lg transition-colors whitespace-nowrap shrink-0">Draft PDF</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="bg-slate-950 text-slate-400 py-20 border-t border-slate-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+            
+            <!-- Column 1: CareFirst Meta Info -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 text-white">
+                    <div class="w-8 h-8 bg-gradient-to-tr from-brand-500 to-sky-400 rounded-lg flex items-center justify-center text-white font-bold">
+                        CF
+                    </div>
+                    <span class="text-lg font-bold tracking-tight font-poppins">Care<span class="text-brand-400">First</span></span>
+                </div>
+                <p class="text-xs leading-relaxed max-w-xs text-slate-500">Premium telemetry health ecosystem providing immediate outbound clinic connections to fully certified medical council practitioners.</p>
+                <div class="flex gap-3 pt-2">
+                    <a href="https://wa.me/1234567890" target="_blank" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition-colors border border-slate-800">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.864-9.83.002-2.623-1.023-5.09-2.885-6.953C16.588 1.958 14.117 1.15 11.99 1.15c-5.438 0-9.863 4.414-9.867 9.831-.001 1.841.488 3.639 1.417 5.223l-1.01 3.693 3.79-1.011zm13.102-7.493c-.301-.151-1.78-.879-2.056-.979-.275-.1-.475-.151-.675.151-.2.301-.775.979-.95 1.18-.175.201-.35.226-.651.075-1.127-.565-1.957-.965-2.731-2.292-.612-1.05-.192-1.613-.08-1.77.103-.141.226-.271.328-.393.101-.122.151-.202.226-.352.075-.15.038-.276-.019-.376-.056-.1-.475-1.144-.651-1.564-.171-.41-.344-.354-.475-.36l-.403-.008c-.141 0-.366.052-.558.261-.192.21-.734.717-.734 1.748 0 1.031.75 2.028.854 2.167.104.139 1.478 2.257 3.58 3.167.5.216.89.345 1.196.443.502.16 1.06.131 1.461.071.447-.066 1.385-.566 1.58-.112.195.454.195.842.14 1.011-.055.169-.2.301-.501.452z"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Column 2: Specialties Navigation Links -->
+            <div>
+                <h4 class="text-white text-xs font-bold uppercase tracking-widest mb-4 font-poppins">Council Specialties</h4>
+                <ul class="space-y-2.5 text-xs text-slate-500">
+                    <li><button onclick="openBookingModal('General Physician')" class="hover:text-brand-400 transition-colors text-left">General Physician</button></li>
+                    <li><button onclick="openBookingModal('Medicine Specialist')" class="hover:text-brand-400 transition-colors text-left">Medicine Specialist</button></li>
+                    <li><button onclick="openBookingModal('Sexologist')" class="hover:text-brand-400 transition-colors text-left">Sexologist Specialist</button></li>
+                    <li><button onclick="openBookingModal('Gynaecologist')" class="hover:text-brand-400 transition-colors text-left">Gynaecologist Specialist</button></li>
+                    <li><button onclick="openBookingModal('Endocrinologist')" class="hover:text-brand-400 transition-colors text-left">Endocrinologist Specialty</button></li>
+                </ul>
+            </div>
+
+            <!-- Column 3: Quick symptoms links -->
+            <div>
+                <h4 class="text-white text-xs font-bold uppercase tracking-widest mb-4 font-poppins">Track Symptoms</h4>
+                <ul class="space-y-2.5 text-xs text-slate-500">
+                    <li><a href="#concerns" class="hover:text-brand-400 transition-colors">Fever and flu</a></li>
+                    <li><a href="#concerns" class="hover:text-brand-400 transition-colors">Running nose triggers</a></li>
+                    <li><a href="#concerns" class="hover:text-brand-400 transition-colors">Depression or Anxiety</a></li>
+                    <li><a href="#concerns" class="hover:text-brand-400 transition-colors">Constipation & IBS advice</a></li>
+                    <li><a href="#concerns" class="hover:text-brand-400 transition-colors">PCOS / PMOS indicators</a></li>
+                </ul>
+            </div>
+
+            <!-- Column 4: Partners & Affiliations -->
+            <div>
+                <h4 class="text-white text-xs font-bold uppercase tracking-widest mb-4 font-poppins">Coordinated Fitness</h4>
+                <p class="text-xs leading-relaxed text-slate-500 mb-4">Our clinical diagnostics interface integrates metabolic workout goals powered by</p>
+                <a href="https://www.addyfitness.com" target="_blank" class="inline-block bg-slate-900 text-white font-bold text-xs px-4 py-2.5 rounded-xl border border-slate-800 hover:border-brand-500 transition-all font-poppins">
+                    www.addyfitness.com
+                </a>
+            </div>
+
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-900 pt-8 flex flex-col md:flex-row items-center justify-between text-slate-600 text-[11px] gap-4">
+            <p>&copy; 2026 CareFirst Virtual Clinic. Dedicated professional telehealth compliance. All rights reserved.</p>
+            <div class="flex gap-6 font-semibold">
+                <a href="#" class="hover:text-slate-400">Privacy &amp; HIPAA Standards</a>
+                <a href="#" class="hover:text-slate-400">Terms of Use</a>
+                <a href="#" class="hover:text-slate-400">Clinical Disclaimer</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Vanilla Javascript Logic System -->
+    <script>
+        // Real-Time Counter Animations (Simulates live outpatient clinical loads)
+        let totalConsultations = 258410;
+        let activeDoctors = 38;
+        let averageWaitSeconds = 255; // 4m 15s
+
+        function updateLiveClinicStats() {
+            // Ticks consultations up naturally
+            totalConsultations += Math.floor(Math.random() * 3);
+            const liveCounter = document.getElementById('live-consults-counter');
+            if (liveCounter) {
+                liveCounter.innerText = totalConsultations.toLocaleString();
+            }
+
+            // Simulates minor doctor logs/disconnects
+            activeDoctors += Math.random() > 0.5 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+            if (activeDoctors < 32) activeDoctors = 32;
+            if (activeDoctors > 45) activeDoctors = 45;
+            
+            const activeHeader = document.getElementById('header-active-count');
+            if (activeHeader) {
+                activeHeader.innerText = `${activeDoctors} Verified Specialists`;
+            }
+
+            // Fluctuates average queue durations
+            averageWaitSeconds += Math.random() > 0.5 ? (Math.random() > 0.5 ? 4 : -4) : 0;
+            if (averageWaitSeconds < 210) averageWaitSeconds = 210; // min 3m 30s
+            if (averageWaitSeconds > 290) averageWaitSeconds = 290; // max 4m 50s
+
+            const min = Math.floor(averageWaitSeconds / 60);
+            const sec = averageWaitSeconds % 60;
+            const waitTimeStr = `${min}m ${sec}s`;
+            
+            const waitHeader = document.getElementById('header-wait-time');
+            if (waitHeader) waitHeader.innerText = waitTimeStr;
+            const liveWait = document.getElementById('live-average-wait');
+            if (liveWait) liveWait.innerText = `${min}m`;
+        }
+
+        // Run stats simulator every 4.5 seconds
+        setInterval(updateLiveClinicStats, 4500);
+
+        // Smooth scroll implementation for slider containers
+        function scrollSlider(sliderId, direction) {
+            const slider = document.getElementById(sliderId);
+            if (slider) {
+                const scrollAmount = direction * 310; // Approximate card dimensions + padding
+                slider.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }
+
+        // Live Filter Search System for Concern Symptoms
+        function filterSymptoms() {
+            const searchVal = document.getElementById('symptom-search-input').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.symptom-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const cardKeywords = card.getAttribute('data-name');
+                if (cardKeywords.includes(searchVal)) {
+                    card.style.display = "flex";
+                    visibleCount++;
+                } else {
+                    card.style.display = "none";
+                }
+            });
+
+            const emptyMsg = document.getElementById('symptom-empty-message');
+            if (visibleCount === 0) {
+                emptyMsg.classList.remove('hidden');
+            } else {
+                emptyMsg.classList.add('hidden');
+            }
+        }
+
+        // Collapsible FAQ logic
+        function toggleFAQ(button) {
+            const container = button.parentElement;
+            const content = button.nextElementSibling;
+            const icon = button.querySelector('svg');
+
+            // Close siblings first to act as an actual accordion panel
+            document.querySelectorAll('.border-t').forEach(box => {
+                if (box !== content && box.parentElement.classList.contains('border-slate-200/60')) {
+                    box.style.maxHeight = null;
+                    box.previousElementSibling.querySelector('svg').style.transform = "rotate(0deg)";
+                }
+            });
+
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                icon.style.transform = "rotate(0deg)";
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.style.transform = "rotate(180deg)";
+            }
+        }
+
+        // Integrated Diagnostic Sandbox Simulator (Mock patient-chatbot triage chat logs)
+        const sandboxChatOutput = document.getElementById('sandbox-chat-output');
+        
+        function appendSandboxMessage(sender, text, isUser = false) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex gap-2 ${isUser ? 'justify-end' : ''}`;
+            
+            if (isUser) {
+                msgDiv.innerHTML = `
+                    <div class="bg-brand-600 text-white rounded-2xl rounded-tr-none p-3 max-w-[80%] shadow-sm font-medium">
+                        ${text}
+                    </div>
+                `;
+            } else {
+                msgDiv.innerHTML = `
+                    <div class="w-7 h-7 bg-brand-500 text-white rounded-lg flex items-center justify-center font-bold text-[10px] shrink-0">CF</div>
+                    <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-none p-3 max-w-[80%] shadow-sm text-slate-700 leading-relaxed">
+                        ${text}
+                    </div>
+                `;
+            }
+            sandboxChatOutput.appendChild(msgDiv);
+            sandboxChatOutput.scrollTop = sandboxChatOutput.scrollHeight;
+        }
+
+        function triggerSandboxResponse(userSymptom) {
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = "flex gap-2 text-slate-400 italic text-[11px] py-1";
+            loadingMsg.innerText = "Support Assistant is analyzing...";
+            sandboxChatOutput.appendChild(loadingMsg);
+            sandboxChatOutput.scrollTop = sandboxChatOutput.scrollHeight;
+
+            setTimeout(() => {
+                loadingMsg.remove();
+                let specialtyRecommendation = "General Physician";
+                let descriptionNote = "";
+
+                const textLower = userSymptom.toLowerCase();
+                if (textLower.includes("pcos") || textLower.includes("menstrual") || textLower.includes("women")) {
+                    specialtyRecommendation = "Gynaecologist";
+                    descriptionNote = "Our on-call Gynaecologists evaluate ovarian metrics, cycle patterns, and provide custom treatment scripts.";
+                } else if (textLower.includes("ibs") || textLower.includes("constipation") || textLower.includes("acid")) {
+                    specialtyRecommendation = "Gastroenterologist";
+                    descriptionNote = "A Gastroenterologist is optimal to isolate enteric symptoms, microbiome issues, or custom digestive scripts.";
+                } else if (textLower.includes("body") || textLower.includes("fever") || textLower.includes("cold")) {
+                    specialtyRecommendation = "General Physician";
+                    descriptionNote = "We'll route you immediately to on-call clinical generalists for cold, viral markers, and standard care plans.";
+                } else if (textLower.includes("sex") || textLower.includes("intimacy") || textLower.includes("erectile")) {
+                    specialtyRecommendation = "Sexologist";
+                    descriptionNote = "A certified Sexology/Urology specialist is recommended. Our portal holds fully confidential 1-on-1 private rooms.";
+                } else if (textLower.includes("depress") || textLower.includes("anxiety") || textLower.includes("panic")) {
+                    specialtyRecommendation = "Mental Health / Psychiatrist";
+                    descriptionNote = "A Mental Wellness specialist can structure daily wellness guides and cognitive coping protocols.";
+                } else {
+                    descriptionNote = "I can match this symptom directly to one of our MCI-licensed physicians inside the official clinic portal.";
+                }
+
+                appendSandboxMessage("CF", `<strong>Triage recommendation:</strong> ${specialtyRecommendation}. <br><br> ${descriptionNote} <br><br> To start a genuine consult call and get a prescription draft, click the button below: <br><br> <button onclick="openBookingModal('${specialtyRecommendation}')" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-md mt-1">Start Live Session &rarr;</button>`);
+            }, 1200);
+        }
+
+        function sendSandboxChip(chipText) {
+            appendSandboxMessage("Patient", chipText, true);
+            triggerSandboxResponse(chipText);
+        }
+
+        function sendSandboxFreeText() {
+            const input = document.getElementById('sandbox-user-input');
+            const val = input.value.trim();
+            if (!val) return;
+            
+            appendSandboxMessage("Patient", val, true);
+            input.value = "";
+            triggerSandboxResponse(val);
+        }
+
+        function handleSandboxEnter(e) {
+            if (e.key === "Enter") {
+                sendSandboxFreeText();
+            }
+        }
+
+
+        // NEW Streamlined Booking Engine & Consultation Simulator JS Logic
+        const specialtyDoctorNames = {
+            "General Physician": "Dr. Marcus Vance",
+            "Medicine Specialist": "Dr. Evelyn Sterling",
+            "Sexologist": "Dr. Adrian Hayes",
+            "Gynaecologist": "Dr. Evelyn Sterling",
+            "Endocrinologist": "Dr. Adrian Hayes",
+            "General Surgeon": "Dr. Marcus Vance",
+            "Psychiatrist": "Dr. Sarah Jenkins",
+            "Gastroenterologist": "Dr. Marcus Vance",
+            "Mental Health": "Dr. Sarah Jenkins"
+        };
+
+        function openBookingModal(defaultSpeciality = '') {
+            const modal = document.getElementById('booking-modal');
+            const card = document.getElementById('booking-modal-card');
+            const dropdown = document.getElementById('booking-speciality');
+
+            // Reset step configuration variables
+            document.getElementById('modal-header-block').classList.remove('hidden');
+            document.getElementById('consultation-form').classList.remove('hidden');
+            document.getElementById('booking-loading-message').classList.add('hidden');
+            document.getElementById('telehealth-room').classList.add('hidden');
+
+            if (dropdown && defaultSpeciality) {
+                dropdown.value = defaultSpeciality;
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('flex');
+                card.classList.remove('scale-95', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeBookingModal() {
+            const modal = document.getElementById('booking-modal');
+            const card = document.getElementById('booking-modal-card');
+
+            card.classList.remove('scale-100', 'opacity-100');
+            card.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        // Triage screen loading simulator bridging to Telehealth Consultation room
+        function submitSimplifiedBooking(event) {
+            event.preventDefault();
+            
+            // Hide Form, Show Loading Triage State
+            document.getElementById('consultation-form').classList.add('hidden');
+            document.getElementById('booking-loading-message').classList.remove('hidden');
+
+            setTimeout(() => {
+                // Done loading clinic routing. Transition to Telehealth Active consultation console
+                document.getElementById('booking-loading-message').classList.add('hidden');
+                document.getElementById('modal-header-block').classList.add('hidden');
+                document.getElementById('telehealth-room').classList.remove('hidden');
+
+                // Determine matched doctor
+                const selectedSpeciality = document.getElementById('booking-speciality').value;
+                const docName = specialtyDoctorNames[selectedSpeciality] || "Dr. Marcus Vance";
+                document.getElementById('telehealth-dr-name').innerText = docName;
+
+                // Setup Initial dialog inside consultation chat logs
+                const dialog = document.getElementById('telehealth-dialog');
+                const symptomsText = document.getElementById('booking-symptoms').value || "unspecified parameters";
+                const patientName = document.getElementById('booking-name').value || "Patient";
+                const age = document.getElementById('booking-age').value || "--";
+                const ht = document.getElementById('booking-height').value || "--";
+                const wt = document.getElementById('booking-weight').value || "--";
+                const syncEnabled = document.getElementById('sync-addy').checked;
+
+                dialog.innerHTML = `
+                    <div class="text-slate-500">[System] Secure encrypted medical channel configured.</div>
+                    <div class="text-slate-400">[System] Patient Parameters shared:<br>
+                      &bull; Name: ${patientName}<br>
+                      &bull; Age: ${age} yrs | Height: ${ht} cm | Weight: ${wt} kg<br>
+                      &bull; Symptoms: "${symptomsText}"
+                    </div>
+                    ${syncEnabled ? '<div class="text-indigo-400">[System] Synced physiological targets with www.addyfitness.com ecosystem</div>' : ''}
+                    <div class="mt-2 text-brand-300"><strong>${docName}:</strong> Hello ${patientName}, I have reviewed your clinical parameters. Let's begin the outpatient virtual diagnosis. Please tell me about any previous histories or recent triggers.</div>
+                `;
+                dialog.scrollTop = dialog.scrollHeight;
+            }, 3000);
+        }
+
+        // Chat controls inside the Telehealth mock room console
+        function sendTelehealthMessage() {
+            const input = document.getElementById('telehealth-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const dialog = document.getElementById('telehealth-dialog');
+            
+            // Append patient message
+            const userDiv = document.createElement('div');
+            userDiv.className = "mt-2 text-slate-300";
+            userDiv.innerHTML = `<strong>Patient:</strong> ${text}`;
+            dialog.appendChild(userDiv);
+            dialog.scrollTop = dialog.scrollHeight;
+
+            input.value = "";
+
+            // Simulate doctor response text
+            setTimeout(() => {
+                const selectedSpeciality = document.getElementById('booking-speciality').value;
+                const docName = specialtyDoctorNames[selectedSpeciality] || "Dr. Marcus Vance";
+                
+                const doctorDiv = document.createElement('div');
+                doctorDiv.className = "mt-2 text-brand-300";
+                doctorDiv.innerHTML = `<strong>${docName}:</strong> Received. I am structuring your physical regimen recommendations and compiling your prescription certificate. Please click 'Draft PDF' below to generate your stamp.`;
+                dialog.appendChild(doctorDiv);
+                dialog.scrollTop = dialog.scrollHeight;
+            }, 1200);
+        }
+
+        function handleTelehealthEnter(event) {
+            if (event.key === "Enter") {
+                sendTelehealthMessage();
+            }
+        }
+
+        function simulatePrescriptionDownload() {
+            const selectedSpeciality = document.getElementById('booking-speciality').value;
+            const docName = specialtyDoctorNames[selectedSpeciality] || "Dr. Marcus Vance";
+            const patientName = document.getElementById('booking-name').value || "Patient";
+            
+            // Simulate prescription output text box rendering 
+            const dialog = document.getElementById('telehealth-dialog');
+            const prescriptionDiv = document.createElement('div');
+            prescriptionDiv.className = "mt-3 bg-emerald-950 text-emerald-300 border border-emerald-800 p-3 rounded-lg text-[10px] font-mono leading-relaxed";
+            prescriptionDiv.innerHTML = `
+                <div class="text-center font-bold tracking-wider uppercase border-b border-emerald-800 pb-1.5 mb-1.5">Official Prescription Certificate</div>
+                <strong>Patient Name:</strong> ${patientName}<br>
+                <strong>Doctor Provider:</strong> ${docName}<br>
+                <strong>License ID:</strong> Council Reg #MCI-20412A<br>
+                <strong>Triage Fields:</strong> ${selectedSpeciality}<br>
+                <strong>Prescribed Therapy:</strong> Standard diagnostic therapy, therapeutic lifestyle exercise sync.<br>
+                <div class="text-right italic mt-2">Sign-Verified Cryptographically ✓</div>
+            `;
+            dialog.appendChild(prescriptionDiv);
+            dialog.scrollTop = dialog.scrollHeight;
+        }
+    </script>
+</body>
+</html>

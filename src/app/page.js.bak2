@@ -1,0 +1,258 @@
+Created At: 2026-07-11T09:14:47Z
+Completed At: 2026-07-11T09:14:48Z
+File Path: `file:///Users/adnanali/Desktop/Doctor%20Consulation/src/app/page.js`
+Total Lines: 1843
+Total Bytes: 110702
+Showing lines 1 to 250
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: "use client";
+2: 
+3: import React, { useState, useEffect, useRef } from "react";
+4: 
+5: const concernsList = [
+6:   { name: "Cough and cold", key: "cough", specialist: "General Physician", count: "12 Doctors Online" },
+7:   { name: "Running nose", key: "nose", specialist: "General Physician", count: "12 Doctors Online" },
+8:   { name: "Fever", key: "fever", specialist: "General Physician", count: "12 Doctors Online" },
+9:   { name: "IBS & Constipation", key: "ibs", specialist: "Gastroenterologist", count: "4 Doctors Online" },
+10:   { name: "PCOS/PMOS Issue", key: "pcos", specialist: "Gynaecologist", count: "7 Doctors Online" },
+11:   { name: "Erectile dysfunction", key: "ed", specialist: "Sexologist", count: "5 Doctors Online" },
+12:   { name: "Premature Ejaculation", key: "pe", specialist: "Sexologist", count: "5 Doctors Online" },
+13:   { name: "Urine Infection", key: "uti", specialist: "General Surgeon", count: "3 Doctors Online" },
+14:   { name: "Weight Loss", key: "weight", specialist: "Endocrinologist", count: "6 Doctors Online" },
+15:   { name: "Depression or Anxiety", key: "anxiety", specialist: "Mental Health", count: "8 Doctors Online" },
+16:   { name: "Panic Attack", key: "panic", specialist: "Psychiatrist", count: "5 Doctors Online" }
+17: ];
+18: 
+19: const specialtyDoctorNames = {
+20:   "General Physician": "Dr. Marcus Vance",
+21:   "Medicine Specialist": "Dr. Evelyn Sterling",
+22:   "Sexologist": "Dr. Adrian Hayes",
+23:   "Gynaecologist": "Dr. Evelyn Sterling",
+24:   "Endocrinologist": "Dr. Adrian Hayes",
+25:   "General Surgeon": "Dr. Marcus Vance",
+26:   "Psychiatrist": "Dr. Sarah Jenkins",
+27:   "Gastroenterologist": "Dr. Marcus Vance",
+28:   "Mental Health": "Dr. Sarah Jenkins"
+29: };
+30: 
+31: export default function Home() {
+32:   // Live Clinic Stats
+33:   const [totalConsultations, setTotalConsultations] = useState(258410);
+34:   const [activeDoctors, setActiveDoctors] = useState(38);
+35:   const [averageWaitSeconds, setAverageWaitSeconds] = useState(255); // 4m 15s
+36: 
+37:   // Symptom Checker Search
+38:   const [symptomSearchQuery, setSymptomSearchQuery] = useState("");
+39: 
+40:   // FAQ Active State
+41:   const [activeFAQIndex, setActiveFAQIndex] = useState(null);
+42: 
+43:   // Booking Modal States
+44:   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+45:   const [bookingSpeciality, setBookingSpeciality] = useState("General Physician");
+46:   const [bookingName, setBookingName] = useState("");
+47:   const [bookingPhone, setBookingPhone] = useState("");
+48:   const [bookingAge, setBookingAge] = useState("");
+49:   const [bookingHeight, setBookingHeight] = useState("");
+50:   const [bookingWeight, setBookingWeight] = useState("");
+51:   const [bookingSymptoms, setBookingSymptoms] = useState("");
+52:   const [syncAddy, setSyncAddy] = useState(false);
+53:   const [isScrolled, setIsScrolled] = useState(false);
+54:   const [isChatOpen, setIsChatOpen] = useState(false);
+55: 
+56:   // Booking Progression
+57:   const [bookingStep, setBookingStep] = useState("form"); // form | loading | room
+58:   const [telehealthMessages, setTelehealthMessages] = useState([]);
+59:   const [telehealthInput, setTelehealthInput] = useState("");
+60: 
+61:   // Sandbox Assistant States
+62:   const [sandboxMessages, setSandboxMessages] = useState([
+63:     {
+64:       sender: "CF",
+65:       text: "Hello! Welcome to our Sandbox. What general health concern can I assist you with tracing today? Click one of the instant selections below or type freely.",
+66:       isUser: false,
+67:     }
+68:   ]);
+69:   const [sandboxInput, setSandboxInput] = useState("");
+70:   const [isSandboxAnalyzing, setIsSandboxAnalyzing] = useState(false);
+71: 
+72:   // Refs for scroll sliders
+73:   const specialitiesSliderRef = useRef(null);
+74:   const concernsSliderRef = useRef(null);
+75:   const sandboxChatOutputRef = useRef(null);
+76:   const telehealthChatOutputRef = useRef(null);
+77: 
+78:   // Stat ticking simulation (natural fluctuations)
+79:   useEffect(() => {
+80:     const interval = setInterval(() => {
+81:       // Tick total consultations up
+82:       setTotalConsultations(prev => prev + Math.floor(Math.random() * 3));
+83: 
+84:       // Fluctuate active doctors slightly
+85:       setActiveDoctors(prev => {
+86:         const delta = Math.random() > 0.5 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+87:         const newVal = prev + delta;
+88:         return Math.max(32, Math.min(45, newVal));
+89:       });
+90: 
+91:       // Fluctuate average wait time
+92:       setAverageWaitSeconds(prev => {
+93:         const delta = Math.random() > 0.5 ? (Math.random() > 0.5 ? 4 : -4) : 0;
+94:         const newVal = prev + delta;
+95:         return Math.max(210, Math.min(290, newVal));
+96:       });
+97:     }, 4500);
+98: 
+99:     return () => clearInterval(interval);
+100:   }, []);
+101: 
+102:   // Scroll to bottom of chat windows on update
+103:   useEffect(() => {
+104:     if (sandboxChatOutputRef.current) {
+105:       sandboxChatOutputRef.current.scrollTop = sandboxChatOutputRef.current.scrollHeight;
+106:     }
+107:   }, [sandboxMessages, isSandboxAnalyzing]);
+108: 
+109:   useEffect(() => {
+110:     if (telehealthChatOutputRef.current) {
+111:       telehealthChatOutputRef.current.scrollTop = telehealthChatOutputRef.current.scrollHeight;
+112:     }
+113:   }, [telehealthMessages]);
+114: 
+115:   useEffect(() => {
+116:     const handleScroll = () => {
+117:       setIsScrolled(window.scrollY > 30);
+118:     };
+119:     window.addEventListener("scroll", handleScroll);
+120:     handleScroll();
+121:     return () => window.removeEventListener("scroll", handleScroll);
+122:   }, []);
+123: 
+124:   // Wait time string formatting
+125:   const formatWaitTime = (totalSecs) => {
+126:     const min = Math.floor(totalSecs / 60);
+127:     const sec = totalSecs % 60;
+128:     return `${min}m ${sec}s`;
+129:   };
+130: 
+131:   // Slider navigation
+132:   const scrollSlider = (sliderRef, direction) => {
+133:     if (sliderRef.current) {
+134:       const scrollAmount = direction * 310;
+135:       sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+136:     }
+137:   };
+138: 
+139:   // Filter Symptoms
+140:   const filteredConcerns = concernsList.filter(item => {
+141:     const query = symptomSearchQuery.toLowerCase().trim();
+142:     return (
+143:       item.name.toLowerCase().includes(query) ||
+144:       item.specialist.toLowerCase().includes(query)
+145:     );
+146:   });
+147: 
+148:   // Modal handlers
+149:   const openBookingModal = (speciality = "") => {
+150:     // Reset modal steps
+151:     setBookingStep("form");
+152:     setTelehealthMessages([]);
+153:     setTelehealthInput("");
+154:     
+155:     if (speciality) {
+156:       // Match mapped string in case it's compound
+157:       let matchedKey = Object.keys(specialtyDoctorNames).find(key => 
+158:         speciality.toLowerCase().includes(key.toLowerCase())
+159:       ) || "General Physician";
+160:       setBookingSpeciality(matchedKey);
+161:     }
+162:     
+163:     setIsBookingModalOpen(true);
+164:   };
+165: 
+166:   const closeBookingModal = () => {
+167:     setIsBookingModalOpen(false);
+168:   };
+169: 
+170:   const submitSimplifiedBooking = (e) => {
+171:     e.preventDefault();
+172:     setBookingStep("loading");
+173: 
+174:     setTimeout(() => {
+175:       setBookingStep("room");
+176:       const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Marcus Vance";
+177:       
+178:       const initialMessages = [
+179:         { sender: "System", text: "Secure encrypted medical channel configured.", type: "system" },
+180:         { 
+181:           sender: "System", 
+182:           text: `Patient Parameters shared:\n• Name: ${bookingName || "Patient"}\n• Age: ${bookingAge || "--"} yrs | Height: ${bookingHeight || "--"} cm | Weight: ${bookingWeight || "--"} kg\n• Symptoms: "${bookingSymptoms || "unspecified parameters"}"`, 
+183:           type: "system" 
+184:         }
+185:       ];
+186: 
+187:       if (syncAddy) {
+188:         initialMessages.push({ 
+189:           sender: "System", 
+190:           text: "Synced physiological targets with www.addyfitness.com ecosystem", 
+191:           type: "sync" 
+192:         });
+193:       }
+194: 
+195:       initialMessages.push({
+196:         sender: docName,
+197:         text: `Hello ${bookingName || "Patient"}, I have reviewed your clinical parameters. Let's begin the outpatient virtual diagnosis. Please tell me about any previous histories or recent triggers.`,
+198:         type: "doctor"
+199:       });
+200: 
+201:       setTelehealthMessages(initialMessages);
+202:     }, 3000);
+203:   };
+204: 
+205:   const sendTelehealthMessage = () => {
+206:     if (!telehealthInput.trim()) return;
+207: 
+208:     // Append patient msg
+209:     const newMsg = { sender: "Patient", text: telehealthInput.trim(), type: "patient" };
+210:     setTelehealthMessages(prev => [...prev, newMsg]);
+211:     setTelehealthInput("");
+212: 
+213:     // Simulate Doctor response
+214:     setTimeout(() => {
+215:       const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Marcus Vance";
+216:       const docMsg = {
+217:         sender: docName,
+218:         text: `Received. I am structuring your physical regimen recommendations and compiling your prescription certificate. Please click 'Draft PDF' below to generate your stamp.`,
+219:         type: "doctor"
+220:       };
+221:       setTelehealthMessages(prev => [...prev, docMsg]);
+222:     }, 1200);
+223:   };
+224: 
+225:   const handleTelehealthEnter = (e) => {
+226:     if (e.key === "Enter") {
+227:       sendTelehealthMessage();
+228:     }
+229:   };
+230: 
+231:   const simulatePrescriptionDownload = () => {
+232:     const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Marcus Vance";
+233:     const prescriptionMsg = {
+234:       sender: "System",
+235:       text: "",
+236:       type: "prescription",
+237:       details: {
+238:         patientName: bookingName || "Patient",
+239:         doctorName: docName,
+240:         speciality: bookingSpeciality,
+241:       }
+242:     };
+243:     setTelehealthMessages(prev => [...prev, prescriptionMsg]);
+244:   };
+245: 
+246:   // Sandbox Assistant Trigger
+247:   const triggerSandboxResponse = (userSymptom) => {
+248:     setIsSandboxAnalyzing(true);
+249:     
+250:     setTimeout(() => {
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
