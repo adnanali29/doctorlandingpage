@@ -162,6 +162,7 @@ export async function GET() {
     await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS is_pain BOOLEAN DEFAULT FALSE`;
     await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS remarks TEXT DEFAULT ''`;
     await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'Unpaid'`;
+    await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS appointment_date TEXT DEFAULT ''`;
 
     // Seed hero_content if empty
     const heroCount = await sql`SELECT COUNT(*) as cnt FROM hero_content`;

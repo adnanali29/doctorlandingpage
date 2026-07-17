@@ -25,7 +25,8 @@ export async function GET() {
              booking_date AS "date",
              assigned_doctor AS "assignedDoctor",
              stage, is_pain AS "isPain", remarks,
-             payment_status AS "paymentStatus"
+             payment_status AS "paymentStatus",
+             appointment_date AS "appointmentDate"
       FROM bookings
       ORDER BY booking_date DESC
     `;
@@ -44,8 +45,8 @@ export async function POST(req) {
     const bookingId = await generateAFDCId();
 
     await sql`
-      INSERT INTO bookings (id, name, phone, age, height, weight, symptoms, speciality, sync_addy, status, assigned_doctor, stage, is_pain, remarks, payment_status)
-      VALUES (${bookingId}, ${name}, ${phone}, ${age}, ${height}, ${weight}, ${symptoms}, ${speciality}, ${syncAddy || false}, 'Active', '', 'Enquiry', false, '', 'Unpaid')
+      INSERT INTO bookings (id, name, phone, age, height, weight, symptoms, speciality, sync_addy, status, assigned_doctor, stage, is_pain, remarks, payment_status, appointment_date)
+      VALUES (${bookingId}, ${name}, ${phone}, ${age}, ${height}, ${weight}, ${symptoms}, ${speciality}, ${syncAddy || false}, 'Active', '', 'Enquiry', false, '', 'Unpaid', '')
     `;
     return NextResponse.json({ success: true, bookingId });
   } catch (err) {
