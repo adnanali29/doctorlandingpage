@@ -1046,7 +1046,7 @@ export default function Home() {
     // Show thank-you confirmation page redirect
     setTimeout(() => {
       if (generatedId) {
-        window.location.href = `/booking/${generatedId}`;
+        window.location.href = `/thankyou/${generatedId}`;
       } else {
         setBookingStep("confirmed");
       }

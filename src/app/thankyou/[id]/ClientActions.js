@@ -8,7 +8,7 @@ export default function ClientActions({ bookingId, speciality, price = 699, pati
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setShareUrl(`${window.location.origin}/booking/${bookingId}`);
+      setShareUrl(`${window.location.origin}/thankyou/${bookingId}`);
 
       // Track Meta Pixel Lead event
       if (window.fbq) {
@@ -71,7 +71,7 @@ export default function ClientActions({ bookingId, speciality, price = 699, pati
         <span className="block text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">Shareable Consultation URL</span>
         <div className="flex gap-2 items-center bg-white border border-slate-100 rounded-2xl p-1 shadow-sm">
           <span className="text-[10px] text-slate-500 font-mono truncate flex-1 pl-3 select-all">
-            {shareUrl || `https://addyfitness.com/booking/${bookingId}`}
+            {shareUrl || `https://addyfitness.com/thankyou/${bookingId}`}
           </span>
           <button
             onClick={copyToClipboard}
@@ -113,7 +113,7 @@ export default function ClientActions({ bookingId, speciality, price = 699, pati
         </button>
         <a
           href="/"
-          className="flex-1 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-3.5 px-6 rounded-2xl transition-all text-xs uppercase tracking-wider active:scale-95 shadow-lg shadow-brand-600/20 flex items-center justify-center gap-2 cursor-pointer font-poppins"
+          className="flex-1 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-3.5 px-6 rounded-2xl transition-all text-xs uppercase tracking-wider active:scale-95 shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2 cursor-pointer font-poppins"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
