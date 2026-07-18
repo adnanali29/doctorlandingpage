@@ -40,13 +40,13 @@ export async function GET() {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { name, phone, age, height, weight, symptoms, speciality, syncAddy } = body;
+    const { name, phone, age, height, weight, symptoms, speciality, syncAddy, appointmentDate } = body;
 
     const bookingId = await generateAFDCId();
 
     await sql`
       INSERT INTO bookings (id, name, phone, age, height, weight, symptoms, speciality, sync_addy, status, assigned_doctor, stage, is_pain, remarks, payment_status, appointment_date)
-      VALUES (${bookingId}, ${name}, ${phone}, ${age}, ${height}, ${weight}, ${symptoms}, ${speciality}, ${syncAddy || false}, 'Active', '', 'Enquiry', false, '', 'Unpaid', '')
+      VALUES (${bookingId}, ${name}, ${phone}, ${age}, ${height}, ${weight}, ${symptoms}, ${speciality}, ${syncAddy || false}, 'Active', '', 'Enquiry', false, '', 'Unpaid', ${appointmentDate || ''})
     `;
     return NextResponse.json({ success: true, bookingId });
   } catch (err) {

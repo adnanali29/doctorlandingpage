@@ -766,6 +766,8 @@ export default function Home() {
   const [bookingConfirmedId, setBookingConfirmedId] = useState("");
   const [bookingConfirmedTime, setBookingConfirmedTime] = useState("");
   const [copied, setCopied] = useState(false);
+  const [appointmentDateVal, setAppointmentDateVal] = useState("");
+  const [appointmentTimeVal, setAppointmentTimeVal] = useState("");
 
   // Sandbox Assistant States
   const [sandboxMessages, setSandboxMessages] = useState([
@@ -1007,6 +1009,12 @@ export default function Home() {
     e.preventDefault();
     setBookingStep("loading");
 
+    // Formulate appointmentDate string for the database
+    let apptDateString = "";
+    if (appointmentDateVal && appointmentTimeVal) {
+      apptDateString = `${appointmentDateVal}T${appointmentTimeVal}`;
+    }
+
     // Save to database via API — server generates AFDC sequential ID
     const newBooking = {
       name: bookingName || "Patient",
@@ -1017,6 +1025,7 @@ export default function Home() {
       symptoms: bookingSymptoms || "unspecified parameters",
       speciality: bookingSpeciality,
       syncAddy: syncAddy,
+      appointmentDate: apptDateString,
     };
 
     let generatedId = "";
@@ -1034,21 +1043,13 @@ export default function Home() {
       console.error("Failed to save booking to DB", err);
     }
 
-    // Show thank-you confirmation screen
+    // Show thank-you confirmation page redirect
     setTimeout(() => {
-      const now = new Date();
-      const formattedTime = now.toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-      }) + " at " + now.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true
-      });
-      setBookingConfirmedTime(formattedTime);
-      setBookingConfirmedId(generatedId);
-      setBookingStep("confirmed");
+      if (generatedId) {
+        window.location.href = `/booking/${generatedId}`;
+      } else {
+        setBookingStep("confirmed");
+      }
     }, 2000);
   };
 
@@ -2483,6 +2484,41 @@ export default function Home() {
                   <option value="Gastroenterologist">Gastroenterologist (₹699)</option>
                   <option value="Mental Health">Mental Health (₹799)</option>
                 </select>
+              </div>
+
+              {/* Date & Time Picker Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Preferred Date
+                  </label>
+                  <input
+                    type="date"
+                    value={appointmentDateVal}
+                    onChange={(e) => setAppointmentDateVal(e.target.value)}
+                    required
+                    min={new Date().toISOString().split("T")[0]}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-3.5 py-3 text-xs focus:outline-none transition-all text-slate-800 font-semibold cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Preferred Time
+                  </label>
+                  <input
+                    type="time"
+                    value={appointmentTimeVal}
+                    onChange={(e) => setAppointmentTimeVal(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-3.5 py-3 text-xs focus:outline-none transition-all text-slate-800 font-semibold cursor-pointer"
+                  />
+                </div>
               </div>
 
               <div>
