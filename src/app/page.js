@@ -762,10 +762,10 @@ export default function Home() {
   const [isAllSpecialitiesModalOpen, setIsAllSpecialitiesModalOpen] = useState(false);
 
   // Booking Progression
-  const [bookingStep, setBookingStep] = useState("form"); // form | loading | confirmed | room
+  const [bookingStep, setBookingStep] = useState("form"); // form | loading | confirmed
   const [bookingConfirmedId, setBookingConfirmedId] = useState("");
-  const [telehealthMessages, setTelehealthMessages] = useState([]);
-  const [telehealthInput, setTelehealthInput] = useState("");
+  const [bookingConfirmedTime, setBookingConfirmedTime] = useState("");
+  const [copied, setCopied] = useState(false);
 
   // Sandbox Assistant States
   const [sandboxMessages, setSandboxMessages] = useState([
@@ -854,7 +854,6 @@ export default function Home() {
   const specialitiesSliderRef = useRef(null);
   const concernsSliderRef = useRef(null);
   const sandboxChatOutputRef = useRef(null);
-  const telehealthChatOutputRef = useRef(null);
 
   // Stat ticking simulation (natural fluctuations)
   useEffect(() => {
@@ -886,12 +885,6 @@ export default function Home() {
       sandboxChatOutputRef.current.scrollTop = sandboxChatOutputRef.current.scrollHeight;
     }
   }, [sandboxMessages, isSandboxAnalyzing]);
-
-  useEffect(() => {
-    if (telehealthChatOutputRef.current) {
-      telehealthChatOutputRef.current.scrollTop = telehealthChatOutputRef.current.scrollHeight;
-    }
-  }, [telehealthMessages]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -964,8 +957,6 @@ export default function Home() {
   const openBookingModal = (speciality = "") => {
     // Reset modal steps
     setBookingStep("form");
-    setTelehealthMessages([]);
-    setTelehealthInput("");
     
     if (speciality) {
       // Match mapped string in case it's compound
@@ -985,6 +976,30 @@ export default function Home() {
       setBookingStep("form");
       setBookingConfirmedId("");
     }, 300);
+  };
+
+  const copyToClipboard = (text) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch((err) => console.error("Clipboard copy failed", err));
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Fallback copy failed", err);
+      }
+      document.body.removeChild(textarea);
+    }
   };
 
 
@@ -1021,77 +1036,23 @@ export default function Home() {
 
     // Show thank-you confirmation screen
     setTimeout(() => {
+      const now = new Date();
+      const formattedTime = now.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      }) + " at " + now.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      });
+      setBookingConfirmedTime(formattedTime);
       setBookingConfirmedId(generatedId);
       setBookingStep("confirmed");
     }, 2000);
   };
 
-  const proceedToTelehealth = () => {
-    setBookingStep("room");
-    const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Swastik Pattnaik";
-    const initialMessages = [
-      { sender: "System", text: "Secure encrypted medical channel configured.", type: "system" },
-      {
-        sender: "System",
-        text: `Patient Parameters shared:\n• Name: ${bookingName || "Patient"}\n• Age: ${bookingAge || "--"} yrs | Height: ${bookingHeight || "--"} cm | Weight: ${bookingWeight || "--"} kg\n• Symptoms: "${bookingSymptoms || "unspecified parameters"}"`,
-        type: "system"
-      }
-    ];
-    if (syncAddy) {
-      initialMessages.push({
-        sender: "System",
-        text: "Synced physiological targets with www.addyfitness.com ecosystem",
-        type: "sync"
-      });
-    }
-    initialMessages.push({
-      sender: docName,
-      text: `Hello ${bookingName || "Patient"}, I have reviewed your clinical parameters. Let's begin the outpatient virtual diagnosis. Please tell me about any previous histories or recent triggers.`,
-      type: "doctor"
-    });
-    setTelehealthMessages(initialMessages);
-  };
 
-  const sendTelehealthMessage = () => {
-    if (!telehealthInput.trim()) return;
-
-    // Append patient msg
-    const newMsg = { sender: "Patient", text: telehealthInput.trim(), type: "patient" };
-    setTelehealthMessages(prev => [...prev, newMsg]);
-    setTelehealthInput("");
-
-    // Simulate Doctor response
-    setTimeout(() => {
-      const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Swastik Pattnaik";
-      const docMsg = {
-        sender: docName,
-        text: `Received. I am structuring your physical regimen recommendations and compiling your prescription certificate. Please click 'Draft PDF' below to generate your stamp.`,
-        type: "doctor"
-      };
-      setTelehealthMessages(prev => [...prev, docMsg]);
-    }, 1200);
-  };
-
-  const handleTelehealthEnter = (e) => {
-    if (e.key === "Enter") {
-      sendTelehealthMessage();
-    }
-  };
-
-  const simulatePrescriptionDownload = () => {
-    const docName = specialtyDoctorNames[bookingSpeciality] || "Dr. Swastik Pattnaik";
-    const prescriptionMsg = {
-      sender: "System",
-      text: "",
-      type: "prescription",
-      details: {
-        patientName: bookingName || "Patient",
-        doctorName: docName,
-        speciality: bookingSpeciality,
-      }
-    };
-    setTelehealthMessages(prev => [...prev, prescriptionMsg]);
-  };
 
   // Sandbox Assistant Trigger
   const triggerSandboxResponse = (userSymptom) => {
@@ -2151,7 +2112,7 @@ export default function Home() {
 
               <h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Pay &amp; Connect Securely</h3>
               <p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
-                Submit your health metrics in one simplified stage, finalize your secure booking, and instantly join your encrypted clinic room.
+                Submit your health metrics in one simplified stage, finalize your secure booking, and instantly receive your confirmed consultation details.
               </p>
 
               <div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #4f46e5, #818cf8)' }} />
@@ -2412,25 +2373,23 @@ export default function Home() {
           }`}
         >
           {/* Header Block */}
-          {bookingStep !== "room" && (
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 font-poppins">Direct Doctor Consultation</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Fill out the quick patient parameters below to pay and connect instantly.
-                </p>
-              </div>
-              <button
-                onClick={closeBookingModal}
-                className="w-9 h-9 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-all focus:outline-none"
-                aria-label="Close"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 font-poppins">Direct Doctor Consultation</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Fill out the quick patient parameters below to pay and connect instantly.
+              </p>
             </div>
-          )}
+            <button
+              onClick={closeBookingModal}
+              className="w-9 h-9 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-all focus:outline-none"
+              aria-label="Close"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
           {/* Step 1: Form */}
           {bookingStep === "form" && (
@@ -2561,7 +2520,7 @@ export default function Home() {
                 type="submit"
                 className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-brand-100 hover:shadow-brand-200 transition-all active:scale-95 flex items-center justify-center gap-2 montserrat-font text-xs uppercase tracking-wider mt-4"
               >
-                <span>Pay & Connect Now</span>
+                <span>Book your appointment</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -2588,162 +2547,122 @@ export default function Home() {
           )}
 
           {/* ── Thank-You Confirmation Screen ── */}
-          {bookingStep === "confirmed" && (
-            <div className="text-center py-8 flex flex-col items-center gap-5">
-              {/* Green check */}
-              <div className="w-20 h-20 rounded-full bg-emerald-50 border-4 border-emerald-100 flex items-center justify-center">
-                <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
+          {bookingStep === "confirmed" && (() => {
+            const shareUrl = typeof window !== "undefined"
+              ? `${window.location.origin}/booking/${bookingConfirmedId}`
+              : `https://addyfitness.com/booking/${bookingConfirmedId}`;
+            return (
+              <div className="text-center py-4 flex flex-col items-center gap-5">
+                {/* Modern Animated Success Checkmark Ring */}
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute w-20 h-20 rounded-full bg-emerald-500/10 animate-ping" style={{ animationDuration: '3s' }} />
+                  <div className="w-16 h-16 rounded-full bg-emerald-50 border-4 border-emerald-100 flex items-center justify-center relative z-10">
+                    <svg className="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
 
-              <div>
-                <h4 className="text-xl font-black text-slate-900 font-poppins">Booking Confirmed!</h4>
-                <p className="text-xs text-slate-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
-                  Thank you, <strong className="text-slate-800">{bookingName || "Patient"}</strong>. Your consultation request has been logged successfully.
-                </p>
-              </div>
-
-              {/* Booking ID badge */}
-              {bookingConfirmedId && (
-                <div className="bg-brand-50 border border-brand-100 rounded-2xl px-6 py-4 w-full max-w-xs">
-                  <p className="text-[10px] uppercase font-black text-brand-400 tracking-widest mb-1.5">Your Booking ID</p>
-                  <p className="text-2xl font-black text-brand-700 font-poppins tracking-wide">{bookingConfirmedId}</p>
-                  <p className="text-[10px] text-slate-400 mt-2 break-all">
-                    Reference: addyfitness.com/booking/{bookingConfirmedId}
+                <div>
+                  <h4 className="text-xl font-black text-slate-900 font-poppins">Booking Confirmed!</h4>
+                  <p className="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                    Thank you, <strong className="text-slate-800 font-bold">{bookingName || "Patient"}</strong>. Your medical consultation request has been successfully registered and routed to our specialist panel.
                   </p>
                 </div>
-              )}
 
-              {/* Info pills */}
-              <div className="flex flex-wrap justify-center gap-2 text-[10px]">
-                <span className="bg-amber-50 border border-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full">
-                  📋 Speciality: {bookingSpeciality}
-                </span>
-                <span className="bg-slate-50 border border-slate-200 text-slate-600 font-bold px-3 py-1 rounded-full">
-                  📞 {bookingPhone}
-                </span>
-              </div>
-
-              {/* CTA buttons */}
-              <div className="w-full flex flex-col gap-2.5 mt-1">
-                <button
-                  onClick={proceedToTelehealth}
-                  className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-brand-100 transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
-                >
-                  <span>Proceed to Consultation</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </button>
-                <button
-                  onClick={closeBookingModal}
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 px-6 rounded-2xl transition-all text-xs"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          )}
-
-          {bookingStep === "room" && (
-            <div className="space-y-4">
-              <div className="bg-slate-900 rounded-3xl p-4 sm:p-5 text-white shadow-inner flex flex-col">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                {/* Premium Ticket/Receipt Card */}
+                <div className="w-full bg-slate-50/50 border border-slate-100 rounded-3xl p-5 text-left space-y-4 shadow-inner relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-brand-500/5 rounded-full blur-xl pointer-events-none" />
+                  
+                  {/* Card Header */}
+                  <div className="border-b border-slate-200/50 pb-3 flex justify-between items-center">
                     <div>
-                      <h4 className="text-xs font-bold">Encrypted Telehealth Room</h4>
-                      <p className="text-[10px] text-slate-400">Node: clinic-inbound-triage</p>
+                      <span className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Consultation Ref</span>
+                      <h5 className="text-base font-black text-brand-600 font-poppins mt-0.5">{bookingConfirmedId || "AFDC---"}</h5>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[9px] text-slate-400 uppercase font-black tracking-widest block">Status</span>
+                      <span className="inline-flex items-center gap-1 text-[9px] bg-emerald-50 border border-emerald-100 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full mt-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Active
+                      </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setBookingStep("form")}
-                    className="text-slate-400 hover:text-white text-xs font-bold"
-                  >
-                    Exit Room
-                  </button>
+
+                  {/* Receipt Details Grid */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 text-[11px]">
+                    <div>
+                      <span className="block text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Patient Name</span>
+                      <span className="font-semibold text-slate-800 truncate block">{bookingName || "Patient"}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Requested Time</span>
+                      <span className="font-semibold text-slate-800 block">{bookingConfirmedTime || "Just now"}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="block text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Focus Specialty / Domain</span>
+                      <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-brand-500" />
+                        {bookingSpeciality}
+                      </span>
+                    </div>
+                    {bookingSymptoms && (
+                      <div className="col-span-2">
+                        <span className="block text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Reported Concern / Symptoms</span>
+                        <div className="text-slate-600 leading-relaxed italic bg-white border border-slate-100 rounded-2xl px-4 py-2.5 text-[11px] font-medium shadow-sm">
+                          "{bookingSymptoms}"
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Shareable Link Block */}
+                  <div className="border-t border-slate-200/50 pt-4">
+                    <span className="block text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">Shareable Consultation URL</span>
+                    <div className="flex gap-2 items-center bg-white border border-slate-100 rounded-2xl p-1 shadow-sm">
+                      <span className="text-[10px] text-slate-500 font-mono truncate flex-1 pl-3 select-all">
+                        {shareUrl}
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(shareUrl)}
+                        className={`flex items-center gap-1.5 text-[10px] font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 cursor-pointer shrink-0 ${
+                          copied
+                            ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                            : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-100"
+                        }`}
+                      >
+                        {copied ? (
+                          <>
+                            <svg className="w-3 h-3 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m-7 8H9m0-3h3m0-3h3" />
+                            </svg>
+                            <span>Copy URL</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div
-                  ref={telehealthChatOutputRef}
-                  className="h-60 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-slate-800"
-                >
-                  {telehealthMessages.map((msg, mIdx) => {
-                    if (msg.type === "system") {
-                      return (
-                        <div key={mIdx} className="text-center text-[10px] text-slate-500 italic bg-slate-950/40 py-1.5 rounded-lg border border-slate-800/40">
-                          {msg.text}
-                        </div>
-                      );
-                    }
-                    if (msg.type === "doctor") {
-                      return (
-                        <div key={mIdx} className="mt-2 text-brand-300">
-                          <strong>{msg.sender}:</strong> {msg.text}
-                        </div>
-                      );
-                    }
-                    if (msg.type === "patient") {
-                      return (
-                        <div key={mIdx} className="mt-2 text-slate-300">
-                          <strong>Patient:</strong> {msg.text}
-                        </div>
-                      );
-                    }
-                    if (msg.type === "prescription") {
-                      return (
-                        <div key={mIdx} className="mt-3 bg-emerald-950 text-emerald-300 border border-emerald-800 p-3 rounded-lg text-[10px] font-mono leading-relaxed">
-                          <div className="text-center font-bold tracking-wider uppercase border-b border-emerald-800 pb-1.5 mb-1.5">
-                            Official Prescription Certificate
-                          </div>
-                          <strong>Patient Name:</strong> {msg.details.patientName}<br />
-                          <strong>Doctor Provider:</strong> {msg.details.doctorName}<br />
-                          <strong>License ID:</strong> Council Reg #MCI-20412A<br />
-                          <strong>Triage Fields:</strong> {msg.details.speciality}<br />
-                          <strong>Prescribed Therapy:</strong> Standard diagnostic therapy, therapeutic lifestyle exercise sync.<br />
-                          <div className="text-right italic mt-2">Sign-Verified Cryptographically ✓</div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })}
-                </div>
-
-                <div className="mt-3 flex gap-2">
-                  <input
-                    type="text"
-                    value={telehealthInput}
-                    onChange={(e) => setTelehealthInput(e.target.value)}
-                    onKeyDown={handleTelehealthEnter}
-                    placeholder="Ask follow up questions..."
-                    className="flex-1 bg-slate-800 border border-slate-700 focus:outline-none focus:border-brand-500 rounded-xl px-3 py-2 text-xs text-white"
-                  />
+                {/* Single Primary Finish Action */}
+                <div className="w-full mt-2">
                   <button
-                    onClick={sendTelehealthMessage}
-                    className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-xl font-bold text-xs transition-colors"
+                    onClick={closeBookingModal}
+                    className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 px-6 rounded-2xl transition-all text-xs uppercase tracking-wider active:scale-95 shadow-lg shadow-brand-500/25 cursor-pointer font-poppins"
                   >
-                    Send
+                    Finish &amp; Return
                   </button>
                 </div>
               </div>
-
-              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex justify-between items-center">
-                <div className="pr-2">
-                  <h5 className="text-xs font-bold text-emerald-900">Virtual Session Active</h5>
-                  <p className="text-[10px] text-emerald-700 mt-0.5">
-                    E-Prescription draft generates immediately on conversation close.
-                  </p>
-                </div>
-                <button
-                  onClick={simulatePrescriptionDownload}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-2 rounded-lg transition-colors whitespace-nowrap shrink-0"
-                >
-                  Draft PDF
-                </button>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 
