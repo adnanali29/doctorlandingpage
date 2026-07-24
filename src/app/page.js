@@ -1533,20 +1533,15 @@ export default function Home() {
         )}
       </nav>
 
-      {/* Hero Section Carousel */}
+      {/* Hero Section */}
       <header 
-        onMouseEnter={() => setIsHeroHovered(true)}
-        onMouseLeave={() => setIsHeroHovered(false)}
-        className="relative overflow-hidden border-b border-slate-100/50 min-h-[600px] lg:h-[650px] w-full flex items-center pt-28 pb-16 lg:pt-28 lg:pb-16 transition-all duration-700 bg-cover"
-
+        className="relative overflow-hidden border-b border-slate-200/50 min-h-[580px] lg:h-[620px] w-full flex items-center pt-28 pb-16 lg:pt-28 lg:pb-16 bg-[#FAF0EE] transition-all duration-700 bg-cover bg-no-repeat bg-[position:right_bottom]"
         style={{ 
           backgroundImage: `url('${activeSlide.imgUrl || heroContent.imgUrl}')`, 
-          backgroundRepeat: "no-repeat", 
-          backgroundPosition: "right bottom" 
         }}
       >
-        {/* Soft background gradient overlay for clean contrast on the left text area */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#faf6f0] via-[#faf6f0]/95 md:via-[#faf6f0]/90 md:via-[45%] to-[#faf6f0]/60 md:to-transparent pointer-events-none z-0" />
+        {/* Soft solid gradient overlay for text readability on left side */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#FAF0EE] via-[#FAF0EE]/95 md:via-[#FAF0EE]/90 md:via-[50%] to-[#FAF0EE]/40 md:to-transparent pointer-events-none z-0" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
           <div className="max-w-2xl flex flex-col justify-center space-y-6 text-left">
@@ -1608,49 +1603,6 @@ export default function Home() {
                 </span>
               </div>
             </div>
-
-            {/* Hero Carousel Navigation Dots & Controls */}
-            {heroSlides.length > 1 && (
-              <div className="flex items-center gap-3 pt-3">
-                {/* Prev Slide Arrow */}
-                <button
-                  onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
-                  className="w-8 h-8 rounded-full bg-white/80 border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-white shadow-xs transition-all active:scale-95 cursor-pointer"
-                  title="Previous slide"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-
-                {/* Dot Indicators */}
-                <div className="flex items-center gap-2">
-                  {heroSlides.map((slide, idx) => (
-                    <button
-                      key={slide.id || idx}
-                      onClick={() => setCurrentHeroSlide(idx)}
-                      className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                        idx === currentHeroSlide
-                          ? "w-8 bg-brand-600"
-                          : "w-2.5 bg-slate-300 hover:bg-slate-400"
-                      }`}
-                      title={`Go to slide ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-
-                {/* Next Slide Arrow */}
-                <button
-                  onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length)}
-                  className="w-8 h-8 rounded-full bg-white/80 border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-white shadow-xs transition-all active:scale-95 cursor-pointer"
-                  title="Next slide"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"/></svg>
-                </button>
-
-                <span className="text-[11px] font-bold text-slate-500 ml-1">
-                  {currentHeroSlide + 1} / {heroSlides.length}
-                </span>
-              </div>
-            )}
 
           </div>
         </div>
