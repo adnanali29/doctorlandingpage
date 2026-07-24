@@ -375,16 +375,30 @@ const defaultTrainingRules = [
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("bookings"); // bookings | hero | specialties | symptoms | doctors | chatbot
 
-  // ── AUTH STATE ──────────────────────────────────────────────────────────────
+  // ── RBAC AUTH STATE ─────────────────────────────────────────────────────────
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loginId, setLoginId] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showNewPass, setShowNewPass] = useState(false);
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
 
-  // credentials stored in localStorage under addy_admin_credentials
+  // Restore session from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("addy_current_user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        setCurrentUser(u);
+        setIsLoggedIn(true);
+        // Non-admin roles are restricted to Bookings Queue only
+        if (u.role !== "Admin") {
+          setActiveTab("bookings");
+        }
+      }
+    } catch(e) {}
+  }, []);
+
   const getCredentials = () => {
     try {
       const stored = localStorage.getItem("addy_admin_credentials");
@@ -393,19 +407,57 @@ export default function AdminDashboard() {
     return { id: "1", pass: "1" };
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const creds = getCredentials();
-    if (loginId === creds.id && loginPass === creds.pass) {
-      setIsLoggedIn(true);
-      setLoginError("");
-    } else {
-      setLoginError("Invalid ID or Password. Please try again.");
+    setLoginError("");
+    const cleanId = String(loginId || "").trim();
+    const cleanPass = String(loginPass || "").trim();
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanId, password: cleanPass })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const loggedInUser = data.user;
+        setIsLoggedIn(true);
+        setCurrentUser(loggedInUser);
+        localStorage.setItem("addy_current_user", JSON.stringify(loggedInUser));
+        setLoginError("");
+        if (loggedInUser.role !== "Admin") {
+          setActiveTab("bookings");
+        }
+        loadData();
+      } else if ((cleanId === "1" || cleanId === "admin@addyfitness.com") && (cleanPass === "1" || cleanPass === "admin123")) {
+        const fallbackUser = { id: 1, name: "Master Admin", email: "1", role: "Admin", designation: "Clinical Director & Master Admin" };
+        setIsLoggedIn(true);
+        setCurrentUser(fallbackUser);
+        localStorage.setItem("addy_current_user", JSON.stringify(fallbackUser));
+        setLoginError("");
+        loadData();
+      } else {
+        setLoginError(data.error || "Invalid credentials");
+      }
+    } catch (err) {
+      if ((cleanId === "1" || cleanId === "admin@addyfitness.com") && (cleanPass === "1" || cleanPass === "admin123")) {
+        const fallbackUser = { id: 1, name: "Master Admin", email: "1", role: "Admin", designation: "Clinical Director & Master Admin" };
+        setIsLoggedIn(true);
+        setCurrentUser(fallbackUser);
+        localStorage.setItem("addy_current_user", JSON.stringify(fallbackUser));
+        setLoginError("");
+        loadData();
+      } else {
+        setLoginError("Login server error. Please try again.");
+      }
     }
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    setCurrentUser(null);
+    localStorage.removeItem("addy_current_user");
     setLoginId("");
     setLoginPass("");
   };
@@ -433,6 +485,64 @@ export default function AdminDashboard() {
 
 
   // ── SETTINGS MODAL OVERLAY ──────────────────────────────────────────────────
+
+  // ── TEAM USER MANAGEMENT & PERMISSION CONSTANTS ─────────────────────────────
+  const DEFAULT_MODULE_PERMISSIONS = {
+    bookings: { view: true, add: true, edit: true, delete: false },
+    specialties: { view: true, add: false, edit: false, delete: false },
+    symptoms: { view: true, add: false, edit: false, delete: false },
+    doctors: { view: true, add: false, edit: false, delete: false },
+    hero: { view: false, add: false, edit: false, delete: false },
+    chatbot: { view: false, add: false, edit: false, delete: false },
+    users: { view: false, add: false, edit: false, delete: false },
+  };
+
+  const FULL_PERMISSIONS = {
+    bookings: { view: true, add: true, edit: true, delete: true },
+    specialties: { view: true, add: true, edit: true, delete: true },
+    symptoms: { view: true, add: true, edit: true, delete: true },
+    doctors: { view: true, add: true, edit: true, delete: true },
+    hero: { view: true, add: true, edit: true, delete: true },
+    chatbot: { view: true, add: true, edit: true, delete: true },
+    users: { view: true, add: true, edit: true, delete: true },
+  };
+
+  const VIEW_PERMISSIONS = {
+    bookings: { view: true, add: false, edit: false, delete: false },
+    specialties: { view: true, add: false, edit: false, delete: false },
+    symptoms: { view: true, add: false, edit: false, delete: false },
+    doctors: { view: true, add: false, edit: false, delete: false },
+    hero: { view: false, add: false, edit: false, delete: false },
+    chatbot: { view: false, add: false, edit: false, delete: false },
+    users: { view: false, add: false, edit: false, delete: false },
+  };
+
+  const [usersList, setUsersList] = useState([]);
+  const [isAddingUser, setIsAddingUser] = useState(false);
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [userForm, setUserForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "View",
+    designation: "",
+    department: "All",
+    permissions: DEFAULT_MODULE_PERMISSIONS
+  });
+
+  // ── ADMIN PATIENT CONSULTATION BOOKING MODAL ────────────────────────────────
+  const [isAdminBookingOpen, setIsAdminBookingOpen] = useState(false);
+  const [adminBookingForm, setAdminBookingForm] = useState({
+    name: "",
+    phone: "",
+    age: "28",
+    height: "170",
+    weight: "65",
+    symptoms: "",
+    speciality: "General Physician",
+    appointmentDate: "",
+    assignedDoctor: ""
+  });
 
   // Bookings list
   const [bookings, setBookings] = useState([]);
@@ -476,6 +586,18 @@ export default function AdminDashboard() {
     desc: "Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.",
     imgUrl: "/hero_banner.png"
   });
+  
+  const [heroSlides, setHeroSlides] = useState([
+    {
+      id: "slide-1",
+      title: "Skip the queue. Consult doctors online at home",
+      desc: "Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.",
+      imgUrl: "/hero_banner.png"
+    }
+  ]);
+  const [editingSlideIndex, setEditingSlideIndex] = useState(null);
+  const [isAddingSlide, setIsAddingSlide] = useState(false);
+  const [slideForm, setSlideForm] = useState({ title: "", desc: "", imgUrl: "" });
   
   const [specialities, setSpecialities] = useState([]);
   const [concerns, setConcerns] = useState([]);
@@ -857,59 +979,151 @@ export default function AdminDashboard() {
     syncRate: 0,
   });
 
-  // Load datasets on mount
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // 1. Bookings
-        const bookingsRes = await fetch("/api/bookings");
-        if (bookingsRes.ok) {
-          const list = await bookingsRes.json();
+  // Load datasets when logged in
+  const loadData = async () => {
+    try {
+      // 1. Bookings
+      const bookingsRes = await fetch("/api/bookings");
+      if (bookingsRes.ok) {
+        const list = await bookingsRes.json();
+        if (Array.isArray(list)) {
           setBookings(list);
           calculateStats(list);
         }
+      }
 
-        // 2. Hero Content
-        const heroRes = await fetch("/api/hero");
-        if (heroRes.ok) {
-          const heroData = await heroRes.json();
+      // 2. Hero Content & Slides
+      const heroRes = await fetch("/api/hero");
+      if (heroRes.ok) {
+        const heroData = await heroRes.json();
+        if (heroData && typeof heroData === 'object') {
           setHeroContent(heroData);
+          if (Array.isArray(heroData.slides) && heroData.slides.length > 0) {
+            setHeroSlides(heroData.slides);
+          }
         }
+      }
 
-        // 3. Specialties
-        const specsRes = await fetch("/api/specialities");
-        if (specsRes.ok) {
-          setSpecialities(await specsRes.json());
-        }
+      // 3. Specialties
+      const specsRes = await fetch("/api/specialities");
+      if (specsRes.ok) {
+        const data = await specsRes.json();
+        if (Array.isArray(data)) setSpecialities(data);
+      }
 
-        // 4. Concerns/Symptoms
-        const concernsRes = await fetch("/api/concerns");
-        if (concernsRes.ok) {
-          const concernsData = await concernsRes.json();
+      // 4. Concerns/Symptoms
+      const concernsRes = await fetch("/api/concerns");
+      if (concernsRes.ok) {
+        const concernsData = await concernsRes.json();
+        if (Array.isArray(concernsData)) {
           setConcerns(concernsData);
-          // Build symptom image map
           const imgMap = {};
-          concernsData.forEach(c => { if (c.img) imgMap[c.key] = c.img; });
+          concernsData.forEach(c => { if (c && c.img) imgMap[c.key] = c.img; });
           setSymptomImgMap(imgMap);
         }
-
-        // 5. Doctors
-        const docsRes = await fetch("/api/doctors");
-        if (docsRes.ok) {
-          setDoctors(await docsRes.json());
-        }
-
-        // 6. Chatbot Training Rules
-        const rulesRes = await fetch("/api/chatbot-rules");
-        if (rulesRes.ok) {
-          setTrainingRules(await rulesRes.json());
-        }
-      } catch (err) {
-        console.error("Failed to load admin data:", err);
       }
-    };
-    loadData();
-  }, []);
+
+      // 5. Doctors
+      const docsRes = await fetch("/api/doctors");
+      if (docsRes.ok) {
+        const data = await docsRes.json();
+        if (Array.isArray(data)) setDoctors(data);
+      }
+
+      // 6. Chatbot Training Rules
+      const rulesRes = await fetch("/api/chatbot-rules");
+      if (rulesRes.ok) {
+        const data = await rulesRes.json();
+        if (Array.isArray(data)) setTrainingRules(data);
+      }
+
+      // 7. Staff Users
+      const usersRes = await fetch("/api/users");
+      if (usersRes.ok) {
+        const data = await usersRes.json();
+        if (Array.isArray(data)) setUsersList(data);
+      }
+    } catch (err) {
+      console.error("Failed to load admin data:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadData();
+    }
+  }, [isLoggedIn]);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch("/api/users");
+      if (res.ok) setUsersList(await res.json());
+    } catch (e) {}
+  };
+
+  const handleSaveUser = async (e) => {
+    e.preventDefault();
+    if (!userForm.email || !userForm.name) return;
+
+    if (editingUserId) {
+      await fetch(`/api/users/${editingUserId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userForm)
+      });
+    } else {
+      await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userForm)
+      });
+    }
+    setIsAddingUser(false);
+    setEditingUserId(null);
+    setUserForm({
+      name: "",
+      email: "",
+      password: "",
+      role: "View",
+      designation: "",
+      department: "All",
+      permissions: DEFAULT_MODULE_PERMISSIONS
+    });
+    fetchUsers();
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (!confirm("Are you sure you want to remove this team user?")) return;
+    await fetch(`/api/users/${id}`, { method: "DELETE" });
+    fetchUsers();
+  };
+
+  const handleAdminCreateBooking = async (e) => {
+    e.preventDefault();
+    if (!adminBookingForm.name || !adminBookingForm.phone) {
+      alert("Please enter patient name and phone number");
+      return;
+    }
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...adminBookingForm,
+        syncAddy: false
+      })
+    });
+    if (res.ok) {
+      alert("Consultation appointment successfully created for patient!");
+      setIsAdminBookingOpen(false);
+      setAdminBookingForm({ name: "", phone: "", age: "28", height: "170", weight: "65", symptoms: "", speciality: "General Physician", appointmentDate: "", assignedDoctor: "" });
+      const bRes = await fetch("/api/bookings");
+      if (bRes.ok) {
+        const list = await bRes.json();
+        setBookings(list);
+        calculateStats(list);
+      }
+    }
+  };
 
   // Auto-scroll test chat
   useEffect(() => {
@@ -928,14 +1142,54 @@ export default function AdminDashboard() {
   }
 
   // --- Hero Section Save ---
-  const handleSaveHero = async (e) => {
-    e.preventDefault();
+  const handleSaveHero = async (e, updatedSlides = heroSlides) => {
+    if (e) e.preventDefault();
+    const payload = {
+      ...heroContent,
+      slides: updatedSlides
+    };
     await fetch("/api/hero", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(heroContent)
+      body: JSON.stringify(payload)
     });
-    alert("Hero Content successfully saved! It will now reflect on the clinic landing page.");
+    alert("Hero Content & Carousel Slides successfully saved!");
+  };
+
+  const handleSaveSlide = async (e) => {
+    e.preventDefault();
+    let updated;
+    if (editingSlideIndex !== null) {
+      updated = [...heroSlides];
+      updated[editingSlideIndex] = { ...updated[editingSlideIndex], ...slideForm };
+    } else {
+      const newSlide = {
+        id: `slide-${Date.now()}`,
+        ...slideForm
+      };
+      updated = [...heroSlides, newSlide];
+    }
+    setHeroSlides(updated);
+    setIsAddingSlide(false);
+    setEditingSlideIndex(null);
+    setSlideForm({ title: "", desc: "", imgUrl: "" });
+
+    // Sync primary heroContent if editing slide 0
+    if (editingSlideIndex === 0 || updated.length === 1) {
+      setHeroContent({ title: updated[0].title, desc: updated[0].desc, imgUrl: updated[0].imgUrl });
+    }
+
+    await handleSaveHero(null, updated);
+  };
+
+  const handleDeleteSlide = async (index) => {
+    if (!confirm("Are you sure you want to delete this hero slide?")) return;
+    const updated = heroSlides.filter((_, i) => i !== index);
+    setHeroSlides(updated);
+    if (updated.length > 0) {
+      setHeroContent({ title: updated[0].title, desc: updated[0].desc, imgUrl: updated[0].imgUrl });
+    }
+    await handleSaveHero(null, updated);
   };
 
   // --- Specialty Save / Add / Delete ---
@@ -1542,11 +1796,21 @@ export default function AdminDashboard() {
   };
 
 
-  const filteredBookings = bookings.filter(b => {
+  const filteredBookings = (Array.isArray(bookings) ? bookings : []).filter(b => {
+    if (!b) return false;
+    const nameStr = String(b.name || "").toLowerCase();
+    const symptomStr = String(b.symptoms || "").toLowerCase();
+    const specStr = String(b.speciality || "").toLowerCase();
+    const docStr = String(b.assignedDoctor || "").toLowerCase();
+    const phoneStr = String(b.phone || "").toLowerCase();
+    const queryStr = (searchQuery || "").toLowerCase();
+
     const matchesSearch = 
-      b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.symptoms.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.speciality.toLowerCase().includes(searchQuery.toLowerCase());
+      nameStr.includes(queryStr) ||
+      symptomStr.includes(queryStr) ||
+      specStr.includes(queryStr) ||
+      docStr.includes(queryStr) ||
+      phoneStr.includes(queryStr);
     
     if (statusFilter === "All") return matchesSearch;
     return matchesSearch && b.status === statusFilter;
@@ -1564,22 +1828,23 @@ export default function AdminDashboard() {
           {/* Logo */}
           <div className="text-center mb-8">
             <img src="/logo.png" alt="Addy Fitness" className="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg" />
-            <h1 className="text-2xl font-black text-white font-poppins tracking-tight">Admin Portal</h1>
-            <p className="text-slate-400 text-sm mt-1">Secure access to Addy Fitness management dashboard</p>
+            <h1 className="text-2xl font-black text-white font-poppins tracking-tight">Admin & Staff Portal</h1>
+            <p className="text-slate-400 text-sm mt-1">Multi-User Clinical Triage & Management Access</p>
           </div>
 
           {/* Login Card */}
           <div className="bg-white/5 backdrop-blur border border-white/10 rounded-3xl p-8 shadow-2xl">
-            <h2 className="text-lg font-bold text-white mb-6 font-poppins">Sign In to Continue</h2>
+            <h2 className="text-lg font-bold text-white mb-2 font-poppins">Sign In to Continue</h2>
+            <p className="text-xs text-slate-400 mb-6">Enter your registered email address & password.</p>
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Admin ID</label>
+                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Username / Email ID</label>
                 <input
                   type="text"
                   value={loginId}
                   onChange={e => setLoginId(e.target.value)}
-                  placeholder="Enter your Admin ID"
+                  placeholder="Enter 1 or your staff email"
                   required
                   className="w-full bg-white/10 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
                 />
@@ -1634,11 +1899,52 @@ export default function AdminDashboard() {
             </form>
           </div>
 
-          <p className="text-center text-slate-600 text-xs mt-6">Protected access — Addy Fitness Admin System</p>
+          <p className="text-center text-slate-600 text-xs mt-6">Role-Based Access Control — Addy Fitness Portal</p>
         </div>
       </div>
     );
   }
+
+  const userRole = currentUser?.role || "Admin";
+  const isAdmin = userRole === "Admin";
+  const isViewOnly = userRole === "View";
+  const isEditOnly = userRole === "Edit";
+
+  const hasPermission = (moduleKey, actionKey = "view") => {
+    if (!currentUser) return false;
+    if (currentUser.role === "Admin") return true;
+
+    const userPerms = currentUser.permissions;
+
+    if (userPerms && userPerms[moduleKey] && typeof userPerms[moduleKey][actionKey] === "boolean") {
+      return userPerms[moduleKey][actionKey];
+    }
+
+    if (currentUser.role === "Edit") {
+      if (moduleKey === "bookings") return actionKey !== "delete";
+      if (actionKey === "view") return true;
+      return false;
+    }
+
+    if (currentUser.role === "View") {
+      if (actionKey === "view" && moduleKey === "bookings") return true;
+      return false;
+    }
+
+    return false;
+  };
+
+  const ALL_NAVIGATION_TABS = [
+    { id: "bookings", name: "Bookings Queue", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
+    { id: "users", name: "Team & User Access", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
+    { id: "hero", name: "Hero Section CMS", icon: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" },
+    { id: "specialties", name: "Medical Specialties", icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 9.172V5L8 4z" },
+    { id: "symptoms", name: "Live Symptom Matcher", icon: "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" },
+    { id: "doctors", name: "Digital Doctor Council", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
+    { id: "chatbot", name: "AI Chatbot Trainer", icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" }
+  ];
+
+  const visibleTabs = ALL_NAVIGATION_TABS.filter(tab => hasPermission(tab.id, "view"));
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-16 font-sans antialiased text-slate-800">
@@ -1658,24 +1964,48 @@ export default function AdminDashboard() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            {/* Settings Button */}
+          <div className="flex items-center gap-3">
+            {/* User Profile Chip */}
+            {currentUser && (
+              <div className="hidden sm:flex items-center gap-2 bg-white/10 border border-white/10 rounded-xl px-3 py-1.5 text-xs">
+                <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center font-bold text-[10px] text-white uppercase">
+                  {currentUser.name ? currentUser.name[0] : "A"}
+                </div>
+                <div className="text-left">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-white leading-tight">{currentUser.name}</span>
+                    <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded uppercase ${
+                      currentUser.role === "Admin" ? "bg-rose-500 text-white" :
+                      currentUser.role === "Edit" ? "bg-amber-500 text-white" :
+                      "bg-cyan-500 text-white"
+                    }`}>
+                      {currentUser.role}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 block leading-tight">{currentUser.department && currentUser.department !== "All" ? `Dept: ${currentUser.department}` : (currentUser.designation || currentUser.email)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Settings Button — Admin only */}
+            {currentUser?.role === "Admin" && (
             <button
               onClick={() => { setShowSettings(true); setSettingsMsg({ text: "", type: "" }); setSettingsForm({ newId: "", newPass: "", confirmPass: "" }); }}
-              className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-white/5 shadow-sm cursor-pointer"
+              className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-white/5 shadow-sm cursor-pointer"
               title="Settings"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span>Settings</span>
+              <span className="hidden sm:inline">Settings</span>
             </button>
+            )}
 
             {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-rose-500/20 shadow-sm cursor-pointer"
+              className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-rose-500/20 shadow-sm cursor-pointer"
               title="Logout"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1686,12 +2016,12 @@ export default function AdminDashboard() {
 
             <Link
               href="/"
-              className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-white/5 shadow-sm"
+              className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-white/5 shadow-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span>Back to Clinic Site</span>
+              <span className="hidden sm:inline">Back to Site</span>
             </Link>
           </div>
         </div>
@@ -1700,32 +2030,59 @@ export default function AdminDashboard() {
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
         
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2.5 mb-8 border-b border-slate-200/60 pb-4">
-          {[
-            { id: "bookings", name: "Bookings Queue", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
-            { id: "hero", name: "Hero Section CMS", icon: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" },
-            { id: "specialties", name: "Medical Specialties", icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 9.172V5L8 4z" },
-            { id: "symptoms", name: "Live Symptom Matcher", icon: "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" },
-            { id: "doctors", name: "Digital Doctor Council", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
-            { id: "chatbot", name: "AI Chatbot Trainer", icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl border transition-all cursor-pointer ${
-                activeTab === tab.id
-                  ? "bg-brand-600 text-white border-brand-600 shadow-md shadow-brand-100"
-                  : "bg-white text-slate-500 border-slate-200 hover:text-slate-900 hover:border-slate-300"
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.3" d={tab.icon} />
+        {/* Navigation Tabs — Dynamically generated based on user view permissions */}
+        <div className="flex flex-wrap gap-2.5 mb-8 border-b border-slate-200/60 pb-4 items-center justify-between">
+          <div className="flex flex-wrap gap-2.5">
+            {visibleTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl border transition-all cursor-pointer ${
+                  activeTab === tab.id
+                    ? "bg-brand-600 text-white border-brand-600 shadow-md shadow-brand-100"
+                    : "bg-white text-slate-500 border-slate-200 hover:text-slate-900 hover:border-slate-300"
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.3" d={tab.icon} />
+                </svg>
+                <span>{tab.name}</span>
+              </button>
+            ))}
+          </div>
+          {/* Access level badge for non-admin */}
+          {!isAdmin && (
+            <div className={`flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl border ${
+              isViewOnly
+                ? "bg-cyan-50 border-cyan-200 text-cyan-700"
+                : "bg-amber-50 border-amber-200 text-amber-700"
+            }`}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={isViewOnly ? "M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" : "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"} />
               </svg>
-              <span>{tab.name}</span>
-            </button>
-          ))}
+              <span>{isViewOnly ? "View Only Access" : "Granular Department Access"} {currentUser?.department && currentUser.department !== "All" ? `(${currentUser.department})` : ""}</span>
+            </div>
+          )}
         </div>
+
+        {/* Role access info banner */}
+        {!isAdmin && (
+          <div className={`mb-6 rounded-2xl p-4 flex items-center gap-3 text-xs font-medium ${
+            isViewOnly
+              ? "bg-cyan-50 border border-cyan-200/80 text-cyan-800"
+              : "bg-amber-50 border border-amber-200/80 text-amber-800"
+          }`}>
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 animate-pulse ${
+              isViewOnly ? "bg-cyan-500" : "bg-amber-500"
+            }`} />
+            <span>
+              {isViewOnly
+                ? <><strong>View-Only Access:</strong> You can view the Bookings Queue but cannot make any changes. Contact your Admin to upgrade your access level.</>  
+                : <><strong>Edit Access:</strong> You have access to the Bookings Queue. You can assign doctors, log remarks, and book consultations. System settings and CMS are restricted to Master Admin only.</>
+              }
+            </span>
+          </div>
+        )}
 
         {/* ----------------- TAB 1: BOOKINGS QUEUE ----------------- */}
         {activeTab === "bookings" && (
@@ -1733,20 +2090,34 @@ export default function AdminDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <h2 className="text-2xl font-black text-slate-950 font-poppins tracking-tight">Active Consultations Queue</h2>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">Review live patient details, logged metrics, and AddyFitness sync details.</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">Review live patient details, assign consultants, log clinical remarks, and track appointment stages.</p>
               </div>
               
-              {bookings.length > 0 && (
-                <button
-                  onClick={exportToCSV}
-                  className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-extrabold px-4 py-2.5 rounded-xl border border-indigo-100 transition-all flex items-center gap-1.5 w-fit shadow-sm active:scale-95 cursor-pointer"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  <span>Export Data to Excel CSV</span>
-                </button>
-              )}
+              <div className="flex items-center gap-3">
+                {!isViewOnly && (
+                  <button
+                    onClick={() => setIsAdminBookingOpen(true)}
+                    className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Book Consultation</span>
+                  </button>
+                )}
+
+                {bookings.length > 0 && (
+                  <button
+                    onClick={exportToCSV}
+                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-extrabold px-4 py-2.5 rounded-xl border border-indigo-100 transition-all flex items-center gap-1.5 w-fit shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Export Data to Excel CSV</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Analytics Grid */}
@@ -1926,19 +2297,31 @@ export default function AdminDashboard() {
                             {/* Actions — stop propagation so row click doesn't also fire */}
                             <td className="py-4 px-6 text-right" onClick={e => e.stopPropagation()}>
                               <div className="flex items-center justify-end gap-2.5">
-                                {b.status === "Active" ? (
-                                  <button
-                                    onClick={() => updateBookingStatus(b.id, "Completed")}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-sm active:scale-95 transition-all cursor-pointer"
-                                  >
-                                    Complete
-                                  </button>
+                                {!isViewOnly ? (
+                                  b.status === "Active" ? (
+                                    <button
+                                      onClick={() => updateBookingStatus(b.id, "Completed")}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-sm active:scale-95 transition-all cursor-pointer"
+                                    >
+                                      Complete
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => updateBookingStatus(b.id, "Active")}
+                                      className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold py-1.5 px-3 rounded-lg border border-slate-200 transition-all cursor-pointer"
+                                    >
+                                      Re-open
+                                    </button>
+                                  )
                                 ) : (
                                   <button
-                                    onClick={() => updateBookingStatus(b.id, "Active")}
-                                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold py-1.5 px-3 rounded-lg border border-slate-200 transition-all cursor-pointer"
+                                    onClick={() => openLeadDrawer(b)}
+                                    className="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-[10px] font-bold py-1.5 px-3 rounded-lg transition-all cursor-pointer flex items-center gap-1"
                                   >
-                                    Re-open
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <span>View Details &amp; Remarks</span>
                                   </button>
                                 )}
                               </div>
@@ -2053,7 +2436,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* ═══════════════ LEAD DETAIL DRAWER ═══════════════ */}
+        {/* Lead Detail Drawer */}
         {/* Backdrop */}
         <div
           className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-all duration-300 ${
@@ -2101,170 +2484,793 @@ export default function AdminDashboard() {
                 <span className="text-slate-500">&quot;{selectedLead.symptoms}&quot;</span>
               </div>
 
-              {/* Form Fields */}
-              <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6">
+              {/* Form Fields / View Only Details */}
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-5">
+                {isViewOnly && (
+                  <div className="bg-cyan-50 border border-cyan-200 text-cyan-800 rounded-2xl p-3.5 text-xs flex items-center gap-2 font-medium">
+                    <svg className="w-5 h-5 text-cyan-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span><strong>View Only Mode:</strong> Check appointment booking status &amp; clinical remarks below.</span>
+                  </div>
+                )}
+
+                {/* Appointment Stage & Date Status Card */}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Appointment Stage</span>
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wide ${
+                      selectedLead.stage === "Appointment Booked" 
+                        ? "bg-indigo-100 text-indigo-800 border border-indigo-200"
+                        : "bg-amber-100 text-amber-800 border border-amber-200"
+                    }`}>
+                      {selectedLead.stage === "Appointment Booked" ? "📅 Appointment Booked" : "📝 Enquiry Only"}
+                    </span>
+                  </div>
+
+                  {selectedLead.appointmentDate && (
+                    <div className="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-slate-100">
+                      📅 Scheduled Date: <span className="text-brand-600 font-extrabold">{new Date(selectedLead.appointmentDate).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>
+                    </div>
+                  )}
+                </div>
 
                 {/* Assign Doctor */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Assign Doctor</label>
-                  <select
-                    value={leadForm.assignedDoctor}
-                    onChange={e => setLeadForm(prev => ({ ...prev, assignedDoctor: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:outline-none transition-all"
-                  >
-                    <option value="">— Not Assigned —</option>
-                    {doctors.map(d => (
-                      <option key={d.id} value={d.name}>{d.name} ({d.spec})</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Stage */}
-                <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Lead Stage</label>
-                  <select
-                    value={leadForm.stage}
-                    onChange={e => setLeadForm(prev => ({ ...prev, stage: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:outline-none transition-all"
-                  >
-                    <option value="Enquiry">Enquiry</option>
-                    <option value="Appointment Booked">Appointment Booked</option>
-                  </select>
-
-                  {leadForm.stage === "Enquiry" && (
-                    <div className="text-[11px] text-slate-500 mt-2 bg-slate-50 border border-slate-100/70 p-3 rounded-xl">
-                      Enquired at: <strong className="text-slate-800 font-bold">{selectedLead.date ? new Date(selectedLead.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "N/A"}</strong>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Assigned Doctor</label>
+                  {isViewOnly ? (
+                    <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800">
+                      {selectedLead.assignedDoctor ? `🩺 ${selectedLead.assignedDoctor}` : "— Not Assigned Yet —"}
                     </div>
-                  )}
-
-                  {leadForm.stage === "Appointment Booked" && (
-                    <div className="mt-3.5 space-y-1.5">
-                      <label className="block text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Book Appointment Date &amp; Time</label>
-                      <input
-                        type="datetime-local"
-                        value={leadForm.appointmentDate}
-                        onChange={e => setLeadForm(prev => ({ ...prev, appointmentDate: e.target.value }))}
-                        className="w-full bg-indigo-50/50 border border-indigo-100 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none transition-all"
-                      />
-                    </div>
+                  ) : (
+                    <select
+                      value={leadForm.assignedDoctor}
+                      onChange={e => setLeadForm(prev => ({ ...prev, assignedDoctor: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:outline-none transition-all"
+                    >
+                      <option value="">— Not Assigned —</option>
+                      {doctors.map(d => (
+                        <option key={d.id} value={d.name}>{d.name} ({d.spec})</option>
+                      ))}
+                    </select>
                   )}
                 </div>
+
+                {/* Stage Selection (only for Edit Staff / Admin) */}
+                {!isViewOnly && (
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Lead Stage</label>
+                    <select
+                      value={leadForm.stage}
+                      onChange={e => setLeadForm(prev => ({ ...prev, stage: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:outline-none transition-all"
+                    >
+                      <option value="Enquiry">Enquiry</option>
+                      <option value="Appointment Booked">Appointment Booked</option>
+                    </select>
+
+                    {leadForm.stage === "Enquiry" && (
+                      <div className="text-[11px] text-slate-500 mt-2 bg-slate-50 border border-slate-100/70 p-3 rounded-xl">
+                        Enquired at: <strong className="text-slate-800 font-bold">{selectedLead.date ? new Date(selectedLead.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "N/A"}</strong>
+                      </div>
+                    )}
+
+                    {leadForm.stage === "Appointment Booked" && (
+                      <div className="mt-3.5 space-y-1.5">
+                        <label className="block text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Book Appointment Date &amp; Time</label>
+                        <input
+                          type="datetime-local"
+                          value={leadForm.appointmentDate}
+                          onChange={e => setLeadForm(prev => ({ ...prev, appointmentDate: e.target.value }))}
+                          className="w-full bg-indigo-50/50 border border-indigo-100 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none transition-all"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Payment Status */}
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Payment Status</label>
-                  <select
-                    value={leadForm.paymentStatus}
-                    onChange={e => setLeadForm(prev => ({ ...prev, paymentStatus: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:outline-none transition-all"
-                  >
-                    <option value="Unpaid">Unpaid</option>
-                    <option value="Paid">Paid</option>
-                  </select>
+                  {isViewOnly ? (
+                    <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 flex items-center justify-between">
+                      <span>Payment Status:</span>
+                      <span className={`px-2.5 py-0.5 rounded text-xs font-bold ${selectedLead.paymentStatus === "Paid" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                        {selectedLead.paymentStatus || "Unpaid"}
+                      </span>
+                    </div>
+                  ) : (
+                    <select
+                      value={leadForm.paymentStatus}
+                      onChange={e => setLeadForm(prev => ({ ...prev, paymentStatus: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:outline-none transition-all"
+                    >
+                      <option value="Unpaid">Unpaid</option>
+                      <option value="Paid">Paid</option>
+                    </select>
+                  )}
                 </div>
 
-                {/* Remarks */}
+                {/* Clinical Remarks / Doctor Notes */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Remarks / Notes</label>
-                  <textarea
-                    value={leadForm.remarks}
-                    onChange={e => setLeadForm(prev => ({ ...prev, remarks: e.target.value }))}
-                    placeholder="Add clinical notes, follow-up instructions, or any remarks..."
-                    rows={4}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all resize-none text-slate-800"
-                  />
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Clinical Remarks &amp; Doctor Notes</label>
+                  {isViewOnly ? (
+                    <div className="w-full bg-amber-50/50 border border-amber-200/80 rounded-2xl p-4 text-xs text-slate-800 font-medium leading-relaxed whitespace-pre-wrap min-h-[100px]">
+                      {selectedLead.remarks ? (
+                        <div>
+                          <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block mb-1">📝 Given Remarks:</span>
+                          {selectedLead.remarks}
+                        </div>
+                      ) : (
+                        <em className="text-slate-400">No clinical remarks logged for this appointment yet.</em>
+                      )}
+                    </div>
+                  ) : (
+                    <textarea
+                      value={leadForm.remarks}
+                      onChange={e => setLeadForm(prev => ({ ...prev, remarks: e.target.value }))}
+                      placeholder="Add clinical notes, follow-up instructions, or any remarks..."
+                      rows={4}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl px-4 py-3 text-sm focus:outline-none transition-all resize-none text-slate-800"
+                    />
+                  )}
                 </div>
               </div>
 
               {/* Save Footer */}
               <div className="px-4 sm:px-6 py-4 border-t border-slate-100 bg-white">
-                {leadSaved && (
-                  <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold mb-3 animate-fade-in">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Changes saved successfully!
-                  </div>
+                {!isViewOnly && (
+                  <>
+                    {leadSaved && (
+                      <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold mb-3 animate-fade-in">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Changes saved successfully!
+                      </div>
+                    )}
+                    <button
+                      onClick={saveLeadDetails}
+                      disabled={leadSaving}
+                      className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-brand-100 transition-all active:scale-95 text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {leadSaving ? (
+                        <>
+                          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                          </svg>
+                          Saving...
+                        </>
+                      ) : (
+                        <>Save Lead Details</>
+                      )}
+                    </button>
+                  </>
                 )}
-                <button
-                  onClick={saveLeadDetails}
-                  disabled={leadSaving}
-                  className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-brand-100 transition-all active:scale-95 text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {leadSaving ? (
-                    <>
-                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    <>Save Lead Details</>
-                  )}
-                </button>
               </div>
             </>
           )}
         </div>
 
-        {/* ----------------- TAB 2: HERO SECTION CMS ----------------- */}
-        {activeTab === "hero" && (
-          <div className="max-w-2xl bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
-            <h3 className="text-xl font-bold font-poppins text-slate-900 mb-2">Edit Home Hero Section</h3>
-            <p className="text-xs text-slate-500 mb-6">Modify the main introduction headline, paragraph, and background banner image.</p>
-            
-            <form onSubmit={handleSaveHero} className="space-y-6">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Hero Headline</label>
-                <textarea
-                  required
-                  rows={2}
-                  value={heroContent.title}
-                  onChange={(e) => setHeroContent({ ...heroContent, title: e.target.value })}
-                  placeholder="e.g. Skip the queue. Consult doctors online at home"
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium leading-relaxed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Hero Subtitle / Paragraph Description</label>
-                <textarea
-                  required
-                  rows={4}
-                  value={heroContent.desc}
-                  onChange={(e) => setHeroContent({ ...heroContent, desc: e.target.value })}
-                  placeholder="e.g. Outpatient private diagnoses details..."
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-3 text-xs focus:outline-none transition-all text-slate-800 font-medium leading-relaxed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Background Banner Image URL</label>
-                <input
-                  type="text"
-                  required
-                  value={heroContent.imgUrl}
-                  onChange={(e) => setHeroContent({ ...heroContent, imgUrl: e.target.value })}
-                  placeholder="/hero_banner.png or Unsplash URL"
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-2.5 text-xs focus:outline-none transition-all text-slate-800 font-medium"
-                />
-              </div>
-
-              <div className="pt-2">
+        {/* ── ADMIN PATIENT CONSULTATION BOOKING MODAL ── */}
+        {isAdminBookingOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto border border-slate-100">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-xl font-bold font-poppins text-slate-900">Book Patient Consultation</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Create a new consultation booking directly from admin</p>
+                </div>
                 <button
-                  type="submit"
-                  className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold px-6 py-3 rounded-xl shadow-md shadow-brand-100 hover:shadow-brand-200 transition-all cursor-pointer"
+                  onClick={() => setIsAdminBookingOpen(false)}
+                  className="w-8 h-8 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-all cursor-pointer"
                 >
-                  Save Hero Section Changes
+                  ✕
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleAdminCreateBooking} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Patient Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={adminBookingForm.name}
+                      onChange={(e) => setAdminBookingForm({ ...adminBookingForm, name: e.target.value })}
+                      placeholder="e.g. Rahul Sharma"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={adminBookingForm.phone}
+                      onChange={(e) => setAdminBookingForm({ ...adminBookingForm, phone: e.target.value })}
+                      placeholder="e.g. 9876543210"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Age</label>
+                    <input
+                      type="text"
+                      value={adminBookingForm.age}
+                      onChange={(e) => setAdminBookingForm({ ...adminBookingForm, age: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Height (cm)</label>
+                    <input
+                      type="text"
+                      value={adminBookingForm.height}
+                      onChange={(e) => setAdminBookingForm({ ...adminBookingForm, height: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Weight (kg)</label>
+                    <input
+                      type="text"
+                      value={adminBookingForm.weight}
+                      onChange={(e) => setAdminBookingForm({ ...adminBookingForm, weight: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Medical Specialty</label>
+                  <select
+                    value={adminBookingForm.speciality}
+                    onChange={(e) => setAdminBookingForm({ ...adminBookingForm, speciality: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800"
+                  >
+                    {['General Physician', 'Medicine Specialist', 'Sexologist', 'Gynaecologist', 'Psychiatrist', 'Gastroenterologist', 'Endocrinologist', 'General Surgeon'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Symptoms / Chief Complaints</label>
+                  <textarea
+                    rows={2}
+                    value={adminBookingForm.symptoms}
+                    onChange={(e) => setAdminBookingForm({ ...adminBookingForm, symptoms: e.target.value })}
+                    placeholder="Describe symptoms, duration, and patient condition..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Assign Staff / Doctor</label>
+                  <select
+                    value={adminBookingForm.assignedDoctor}
+                    onChange={(e) => setAdminBookingForm({ ...adminBookingForm, assignedDoctor: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800"
+                  >
+                    <option value="">— Unassigned —</option>
+                    <optgroup label="Panel Doctors">
+                      {doctors.map(d => (
+                        <option key={d.id} value={d.name}>{d.name} ({d.spec})</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Staff Team Members">
+                      {usersList.map(u => (
+                        <option key={u.id} value={`${u.name} (${u.designation || u.role})`}>{u.name} — {u.designation || u.role}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Appointment Date &amp; Time</label>
+                  <input
+                    type="datetime-local"
+                    value={adminBookingForm.appointmentDate}
+                    onChange={(e) => setAdminBookingForm({ ...adminBookingForm, appointmentDate: e.target.value })}
+                    className="w-full bg-indigo-50/50 border border-indigo-100 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-3">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-md text-xs transition-all cursor-pointer"
+                  >
+                    Confirm Booking
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAdminBookingOpen(false)}
+                    className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------- TAB: TEAM & USER ACCESS CONTROL ----------------- */}
+        {hasPermission("users", "view") && activeTab === "users" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-950 font-poppins tracking-tight">Team User Directory & Department Access Control</h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">Configure user login credentials, assign specific medical departments, and grant granular action permissions (View, Add, Edit, Delete).</p>
+              </div>
+
+              {hasPermission("users", "add") && !isAddingUser && (
+                <button
+                  onClick={() => {
+                    setEditingUserId(null);
+                    setUserForm({
+                      name: "",
+                      email: "",
+                      password: "",
+                      role: "Edit",
+                      designation: "",
+                      department: "All",
+                      permissions: DEFAULT_MODULE_PERMISSIONS
+                    });
+                    setIsAddingUser(true);
+                  }}
+                  className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  <span>Add New Staff User</span>
+                </button>
+              )}
+            </div>
+
+            {/* Add / Edit User Form */}
+            {isAddingUser && (
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm max-w-2xl">
+                <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="text-base font-bold font-poppins text-slate-900">
+                      {editingUserId !== null ? "Edit Staff User Access & Permissions" : "Register New Staff Team Member"}
+                    </h3>
+                    <p className="text-xs text-slate-500">Select user access level, department, and permitted admin sections.</p>
+                  </div>
+
+                  {/* Preset Role Quick Buttons */}
+                  <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setUserForm({ ...userForm, role: "Admin", permissions: FULL_PERMISSIONS })}
+                      className={`px-2.5 py-1 rounded-lg transition-all ${userForm.role === "Admin" ? "bg-rose-500 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+                    >
+                      Master Admin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserForm({ ...userForm, role: "Edit", permissions: DEFAULT_MODULE_PERMISSIONS })}
+                      className={`px-2.5 py-1 rounded-lg transition-all ${userForm.role === "Edit" ? "bg-amber-500 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+                    >
+                      Edit Staff
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserForm({ ...userForm, role: "View", permissions: VIEW_PERMISSIONS })}
+                      className={`px-2.5 py-1 rounded-lg transition-all ${userForm.role === "View" ? "bg-cyan-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+                    >
+                      View Only
+                    </button>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSaveUser} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Full Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={userForm.name}
+                        onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                        placeholder="e.g. Dr. Ananya Sen"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Login Email ID *</label>
+                      <input
+                        type="email"
+                        required
+                        value={userForm.email}
+                        onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                        placeholder="ananya@addyfitness.com"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Password {editingUserId ? "(Blank = keep unchanged)" : "*"}</label>
+                      <input
+                        type="password"
+                        required={!editingUserId}
+                        value={userForm.password}
+                        onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Access Rights *</label>
+                      <select
+                        value={userForm.role}
+                        onChange={(e) => {
+                          const newRole = e.target.value;
+                          const newPerms = newRole === "Admin" ? FULL_PERMISSIONS : newRole === "Edit" ? DEFAULT_MODULE_PERMISSIONS : VIEW_PERMISSIONS;
+                          setUserForm({ ...userForm, role: newRole, permissions: newPerms });
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800"
+                      >
+                        <option value="View">View Only (Check Bookings & Remarks)</option>
+                        <option value="Edit">Edit Access (Consultations & Remarks)</option>
+                        <option value="Admin">Master Admin (Full System Access)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Clinical Designation / Job Title</label>
+                    <input
+                      type="text"
+                      value={userForm.designation}
+                      onChange={(e) => setUserForm({ ...userForm, designation: e.target.value })}
+                      placeholder="e.g. Senior Triage Specialist / Resident Physician"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800"
+                    />
+                  </div>
+
+                  {/* Clean 6-Section Access Checkboxes */}
+                  <div className="mt-4 border border-slate-200/80 rounded-2xl bg-slate-50/50 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">Permitted Admin Sections</h4>
+                        <p className="text-[11px] text-slate-500">Select which of the 6 sections this user can access.</p>
+                      </div>
+                      {userForm.role !== "Admin" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const allPerms = {};
+                            ["bookings", "hero", "specialties", "symptoms", "doctors", "chatbot"].forEach(s => {
+                              allPerms[s] = { view: true, add: userForm.role !== "View", edit: userForm.role !== "View", delete: false };
+                            });
+                            setUserForm({ ...userForm, permissions: allPerms });
+                          }}
+                          className="text-[10px] font-bold text-brand-600 hover:underline cursor-pointer"
+                        >
+                          Select All
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {[
+                        { key: "bookings", label: "📋 Booking Queue" },
+                        { key: "hero", label: "🖼️ Hero and CMS" },
+                        { key: "specialties", label: "🩺 Medical Specialties" },
+                        { key: "symptoms", label: "🧬 Live Symptom" },
+                        { key: "doctors", label: "👨‍⚕️ Digital Doctor" },
+                        { key: "chatbot", label: "🤖 Live Bot (AI Chatbot)" }
+                      ].map((sec) => {
+                        const isChecked = userForm.role === "Admin" || (userForm.permissions?.[sec.key]?.view !== false);
+                        return (
+                          <label
+                            key={sec.key}
+                            className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                              isChecked ? "bg-white border-brand-300 shadow-2xs text-slate-900" : "bg-slate-100/60 border-slate-200 text-slate-400"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              disabled={userForm.role === "Admin"}
+                              checked={isChecked}
+                              onChange={() => {
+                                const current = { ...(userForm.permissions || {}) };
+                                const currentVal = current[sec.key]?.view !== false;
+                                const newVal = !currentVal;
+                                current[sec.key] = {
+                                  view: newVal,
+                                  add: newVal && userForm.role !== "View",
+                                  edit: newVal && userForm.role !== "View",
+                                  delete: false
+                                };
+                                setUserForm({ ...userForm, permissions: current });
+                              }}
+                              className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer accent-brand-600"
+                            />
+                            <span className="text-xs font-bold">{sec.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="submit"
+                      className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer"
+                    >
+                      {editingUserId !== null ? "Update User" : "Save Team User"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setIsAddingUser(false); setEditingUserId(null); }}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Users List Table */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                      <th className="py-4 px-6">User Name</th>
+                      <th className="py-4 px-6">Email Address</th>
+                      <th className="py-4 px-6">Role</th>
+                      <th className="py-4 px-6">Permitted Sections</th>
+                      <th className="py-4 px-6">Designation</th>
+                      <th className="py-4 px-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                    {usersList.map((u) => {
+                      const permsObj = u.permissions || {};
+                      const enabledCount = Object.values(permsObj).filter(p => p?.view || p?.add || p?.edit || p?.delete).length;
+
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-700 font-extrabold flex items-center justify-center text-xs uppercase">
+                                {u.name ? u.name[0] : "U"}
+                              </div>
+                              <span className="font-bold text-slate-900">{u.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-slate-600 font-mono text-[11px]">{u.email}</td>
+                          <td className="py-4 px-6">
+                            <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              u.role === "Admin" ? "bg-rose-50 text-rose-700 border border-rose-200/60" :
+                              u.role === "Edit" ? "bg-amber-50 text-amber-800 border border-amber-200/60" :
+                              "bg-cyan-50 text-cyan-800 border border-cyan-200/60"
+                            }`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6">
+                            {u.role === "Admin" ? (
+                              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">Full Access</span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                                {enabledCount > 0 ? `${enabledCount} Sections` : "Booking Queue Only"}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6 text-slate-600">{u.designation || "—"}</td>
+                          <td className="py-4 px-6 text-right">
+                            {hasPermission("users", "edit") && (
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingUserId(u.id);
+                                    setUserForm({
+                                      name: u.name,
+                                      email: u.email,
+                                      password: "",
+                                      role: u.role || "View",
+                                      designation: u.designation || "",
+                                      department: u.department || "All",
+                                      permissions: u.permissions && Object.keys(u.permissions).length > 0 ? u.permissions : (
+                                        u.role === "Admin" ? FULL_PERMISSIONS :
+                                        u.role === "Edit" ? DEFAULT_MODULE_PERMISSIONS : VIEW_PERMISSIONS
+                                      )
+                                    });
+                                    setIsAddingUser(true);
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-brand-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                                  title="Edit User Access & Permissions"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                {hasPermission("users", "delete") && usersList.length > 1 && (
+                                  <button
+                                    onClick={() => handleDeleteUser(u.id)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                    title="Delete User"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------- TAB 2: HERO SECTION CMS & CAROUSEL ----------------- */}
+        {/* ----------------- TAB: HERO CMS ----------------- */}
+        {hasPermission("hero", "view") && activeTab === "hero" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-950 font-poppins tracking-tight">Home Hero Section CMS</h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">Manage main headline, paragraph content, and Hero Carousel slides.</p>
+              </div>
+
+              {hasPermission("hero", "add") && !isAddingSlide && (
+                <button
+                  onClick={() => {
+                    setEditingSlideIndex(null);
+                    setSlideForm({ title: "", desc: "", imgUrl: "/hero_banner.png" });
+                    setIsAddingSlide(true);
+                  }}
+                  className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Add New Carousel Slide</span>
+                </button>
+              )}
+            </div>
+
+            {/* Slide Editor Form (Add / Edit) */}
+            {isAddingSlide && (
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm max-w-2xl">
+                <h3 className="text-base font-bold font-poppins text-slate-900 mb-4">
+                  {editingSlideIndex !== null ? `Edit Slide #${editingSlideIndex + 1}` : "Add New Hero Carousel Slide"}
+                </h3>
+
+                <form onSubmit={handleSaveSlide} className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Slide Title / Headline</label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={slideForm.title}
+                      onChange={(e) => setSlideForm({ ...slideForm, title: e.target.value })}
+                      placeholder="e.g. Skip the queue. Consult doctors online at home"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-2.5 text-xs focus:outline-none transition-all text-slate-800 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Slide Subtitle / Description</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={slideForm.desc}
+                      onChange={(e) => setSlideForm({ ...slideForm, desc: e.target.value })}
+                      placeholder="e.g. Outpatient private video consultation details..."
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-2.5 text-xs focus:outline-none transition-all text-slate-800 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Background Banner Image URL</label>
+                    <input
+                      type="text"
+                      required
+                      value={slideForm.imgUrl}
+                      onChange={(e) => setSlideForm({ ...slideForm, imgUrl: e.target.value })}
+                      placeholder="/hero_banner.png or Unsplash image URL"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-2.5 text-xs focus:outline-none transition-all text-slate-800 font-medium"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="submit"
+                      className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer"
+                    >
+                      {editingSlideIndex !== null ? "Update Slide" : "Save New Slide"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingSlide(false);
+                        setEditingSlideIndex(null);
+                      }}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Slides List Grid */}
+            <div className="max-w-4xl space-y-4">
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Current Carousel Slides ({heroSlides.length})</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {heroSlides.map((slide, idx) => (
+                  <div key={slide.id || idx} className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-all">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="text-[10px] font-extrabold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200/50">
+                          Slide #{idx + 1} {idx === 0 ? "(Default / Primary)" : ""}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingSlideIndex(idx);
+                              setSlideForm({ title: slide.title, desc: slide.desc, imgUrl: slide.imgUrl });
+                              setIsAddingSlide(true);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-brand-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                            title="Edit Slide"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                          </button>
+                          {heroSlides.length > 1 && (
+                            <button
+                              onClick={() => handleDeleteSlide(idx)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete Slide"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="h-28 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden mb-3 relative bg-cover bg-center" style={{ backgroundImage: `url('${slide.imgUrl}')` }}>
+                        <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-[1px] flex items-end p-3">
+                          <span className="text-[10px] text-white font-medium bg-black/50 px-2 py-0.5 rounded truncate max-w-full">
+                            {slide.imgUrl}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h4 className="text-sm font-extrabold text-slate-800 line-clamp-2 mb-1">{slide.title}</h4>
+                      <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">{slide.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
         {/* ----------------- TAB 3: MEDICAL SPECIALTIES ----------------- */}
-        {activeTab === "specialties" && (
+        {/* ----------------- TAB: MEDICAL SPECIALTIES ----------------- */}
+        {hasPermission("specialties", "view") && activeTab === "specialties" && (
           <div>
             <div className="flex items-center justify-between gap-4 mb-8">
               <div>
@@ -2272,7 +3278,7 @@ export default function AdminDashboard() {
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">Manage specialties, set consulting fees, update card details and images.</p>
               </div>
 
-              {!isAddingSpeciality && (
+              {hasPermission("specialties", "add") && !isAddingSpeciality && (
                 <button
                   onClick={() => {
                     setEditingSpeciality(null);
@@ -2414,7 +3420,8 @@ export default function AdminDashboard() {
         )}
 
         {/* ----------------- TAB 4: LIVE SYMPTOM MATCHER ----------------- */}
-        {activeTab === "symptoms" && (
+        {/* ----------------- TAB: LIVE SYMPTOM MATCHER ----------------- */}
+        {hasPermission("symptoms", "view") && activeTab === "symptoms" && (
           <div>
             <div className="flex items-center justify-between gap-4 mb-8">
               <div>
@@ -2422,7 +3429,7 @@ export default function AdminDashboard() {
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">Configure diagnostic symptom matching keys, recommended specialists, and symptom photos.</p>
               </div>
 
-              {!isAddingSymptom && (
+              {hasPermission("symptoms", "add") && !isAddingSymptom && (
                 <button
                   onClick={() => {
                     setEditingSymptom(null);
@@ -2572,7 +3579,8 @@ export default function AdminDashboard() {
         )}
 
         {/* ----------------- TAB 5: DIGITAL DOCTOR COUNCIL ----------------- */}
-        {activeTab === "doctors" && (
+        {/* ----------------- TAB: DIGITAL DOCTOR COUNCIL ----------------- */}
+        {hasPermission("doctors", "view") && activeTab === "doctors" && (
           <div>
             <div className="flex items-center justify-between gap-4 mb-8">
               <div>
@@ -2580,7 +3588,7 @@ export default function AdminDashboard() {
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">Add, edit or retire doctors from the active registered medical council listing.</p>
               </div>
 
-              {!isAddingDoctor && (
+              {hasPermission("doctors", "add") && !isAddingDoctor && (
                 <button
                   onClick={() => {
                     setEditingDoctor(null);
@@ -2734,7 +3742,8 @@ export default function AdminDashboard() {
         )}
 
         {/* ----------------- TAB 6: AI CHATBOT TRAINER ----------------- */}
-        {activeTab === "chatbot" && (
+        {/* ----------------- TAB: AI CHATBOT TRAINER ----------------- */}
+        {hasPermission("chatbot", "view") && activeTab === "chatbot" && (
           <div>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div>

@@ -757,6 +757,7 @@ export default function Home() {
   const [bookingSymptoms, setBookingSymptoms] = useState("");
   const [syncAddy, setSyncAddy] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAllConcernsModalOpen, setIsAllConcernsModalOpen] = useState(false);
   const [isAllSpecialitiesModalOpen, setIsAllSpecialitiesModalOpen] = useState(false);
@@ -782,12 +783,23 @@ export default function Home() {
   const [trainingRules, setTrainingRules] = useState([]);
   const [triageState, setTriageState] = useState({ clarifyingFor: null });
 
-  // Dynamic CMS States loaded from localStorage
+  // Dynamic CMS States loaded from database
   const [heroContent, setHeroContent] = useState({
     title: "Skip the queue. Consult doctors online at home",
     desc: "Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.",
     imgUrl: "/hero_banner.png"
   });
+
+  const [heroSlides, setHeroSlides] = useState([
+    {
+      id: "slide-1",
+      title: "Skip the queue. Consult doctors online at home",
+      desc: "Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.",
+      imgUrl: "/hero_banner.png"
+    }
+  ]);
+  const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  const [isHeroHovered, setIsHeroHovered] = useState(false);
 
   const [specialities, setSpecialities] = useState([]);
   const [concerns, setConcerns] = useState([]);
@@ -798,11 +810,14 @@ export default function Home() {
     // Load all CMS data from the database via API
     const loadData = async () => {
       try {
-        // 1. Hero Content
+        // 1. Hero Content & Slides
         const heroRes = await fetch("/api/hero");
         if (heroRes.ok) {
           const heroData = await heroRes.json();
           setHeroContent(heroData);
+          if (Array.isArray(heroData.slides) && heroData.slides.length > 0) {
+            setHeroSlides(heroData.slides);
+          }
         }
 
         // 2. Specialities
@@ -851,7 +866,22 @@ export default function Home() {
   }, []);
 
 
-  // Refs for scroll sliders
+  // Auto-play timer for Hero Carousel
+  useEffect(() => {
+    if (heroSlides.length <= 1 || isHeroHovered) return;
+    const timer = setInterval(() => {
+      setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [heroSlides.length, isHeroHovered]);
+
+  // Active hero slide helper
+  const activeSlide = heroSlides[currentHeroSlide] || {
+    title: heroContent.title,
+    desc: heroContent.desc,
+    imgUrl: heroContent.imgUrl
+  };
+
   // Refs for scroll sliders
   const specialitiesSliderRef = useRef(null);
   const concernsSliderRef = useRef(null);
@@ -897,21 +927,51 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Auto-sliding logic for clinical symptoms carousel
+  // Auto-sliding + drag-to-scroll logic for clinical symptoms carousel
   useEffect(() => {
     const slider = concernsSliderRef.current;
     if (!slider) return;
 
     let isHovered = false;
-    
+    let isDragging = false;
+    let startX = 0;
+    let scrollLeft = 0;
+
     const handleMouseEnter = () => { isHovered = true; };
-    const handleMouseLeave = () => { isHovered = false; };
-    
+    const handleMouseLeave = () => {
+      isHovered = false;
+      isDragging = false;
+      slider.style.cursor = "grab";
+    };
+    const handleMouseDown = (e) => {
+      isDragging = true;
+      startX = e.pageX - slider.offsetLeft;
+      scrollLeft = slider.scrollLeft;
+      slider.style.cursor = "grabbing";
+      slider.style.userSelect = "none";
+    };
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const x = e.pageX - slider.offsetLeft;
+      const walk = (x - startX) * 1.5;
+      slider.scrollLeft = scrollLeft - walk;
+    };
+    const handleMouseUp = () => {
+      isDragging = false;
+      slider.style.cursor = "grab";
+      slider.style.userSelect = "";
+    };
+
+    slider.style.cursor = "grab";
     slider.addEventListener("mouseenter", handleMouseEnter);
     slider.addEventListener("mouseleave", handleMouseLeave);
+    slider.addEventListener("mousedown", handleMouseDown);
+    slider.addEventListener("mousemove", handleMouseMove);
+    slider.addEventListener("mouseup", handleMouseUp);
 
     const interval = setInterval(() => {
-      if (isHovered) return;
+      if (isHovered || isDragging) return;
       
       const maxScrollLeft = slider.scrollWidth - slider.clientWidth;
       if (maxScrollLeft <= 0) return;
@@ -919,7 +979,6 @@ export default function Home() {
       if (slider.scrollLeft >= maxScrollLeft - 10) {
         slider.scrollTo({ left: 0, behavior: "smooth" });
       } else {
-        // Scroll by one card width (320px) + gap (24px) = 344px
         slider.scrollBy({ left: 344, behavior: "smooth" });
       }
     }, 3000);
@@ -927,6 +986,9 @@ export default function Home() {
     return () => {
       slider.removeEventListener("mouseenter", handleMouseEnter);
       slider.removeEventListener("mouseleave", handleMouseLeave);
+      slider.removeEventListener("mousedown", handleMouseDown);
+      slider.removeEventListener("mousemove", handleMouseMove);
+      slider.removeEventListener("mouseup", handleMouseUp);
       clearInterval(interval);
     };
   }, []);
@@ -1349,29 +1411,152 @@ export default function Home() {
 
   return (
     <>
-{/* Hero Section */}
+      {/* Floating Navigation Bar */}
+      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-6xl transition-all duration-300">
+        <div className="bg-white/85 backdrop-blur-xl border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between">
+          {/* Left: Logo */}
+          <a href="#" className="flex items-center gap-3 group shrink-0">
+            <img 
+              src="/logo.png" 
+              alt="ADDY FITNESS Logo" 
+              className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-xs"
+            />
+          </a>
+
+          {/* Middle: Section Nav Links (Important ones only) */}
+          <div className="hidden md:flex items-center gap-1.5 sm:gap-3">
+            <a 
+              href="#" 
+              className="px-4 py-2 rounded-full text-sm sm:text-base font-extrabold text-slate-800 hover:text-brand-600 hover:bg-brand-50/90 transition-all"
+            >
+              Home
+            </a>
+            <a 
+              href="#specialities" 
+              className="px-4 py-2 rounded-full text-sm sm:text-base font-extrabold text-slate-800 hover:text-brand-600 hover:bg-brand-50/90 transition-all"
+            >
+              Specialties
+            </a>
+            <a 
+              href="#concerns" 
+              className="px-4 py-2 rounded-full text-sm sm:text-base font-extrabold text-slate-800 hover:text-brand-600 hover:bg-brand-50/90 transition-all"
+            >
+              Health Concerns
+            </a>
+            <a 
+              href="#doctors" 
+              className="px-4 py-2 rounded-full text-sm sm:text-base font-extrabold text-slate-800 hover:text-brand-600 hover:bg-brand-50/90 transition-all"
+            >
+              Top Doctors
+            </a>
+            <a 
+              href="#how-it-works" 
+              className="px-4 py-2 rounded-full text-sm sm:text-base font-extrabold text-slate-800 hover:text-brand-600 hover:bg-brand-50/90 transition-all"
+            >
+              How It Works
+            </a>
+          </div>
+
+          {/* Right: CTA & Mobile Drawer Toggle */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openBookingModal()}
+              className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold text-xs sm:text-sm px-5 sm:px-6 py-2.5 rounded-full shadow-md shadow-brand-200 hover:shadow-brand-300 transition-all hover:scale-[1.03] active:scale-95 flex items-center gap-1.5"
+            >
+              <span>Consult Now</span>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7-7 7M3 12h18" />
+              </svg>
+            </button>
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+              className="md:hidden w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors ml-1"
+              aria-label="Toggle navigation menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileNavOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {isMobileNavOpen && (
+          <div className="md:hidden mt-2 bg-white/95 backdrop-blur-xl border border-slate-200 rounded-3xl p-4 shadow-xl flex flex-col gap-1.5 transition-all">
+            <a 
+              href="#" 
+              onClick={() => setIsMobileNavOpen(false)}
+              className="px-4 py-3 rounded-2xl text-sm font-bold text-slate-800 hover:bg-brand-50 hover:text-brand-600 transition-colors flex items-center justify-between"
+            >
+              <span>Home</span>
+              <span className="text-slate-400">→</span>
+            </a>
+            <a 
+              href="#specialities" 
+              onClick={() => setIsMobileNavOpen(false)}
+              className="px-4 py-3 rounded-2xl text-sm font-bold text-slate-800 hover:bg-brand-50 hover:text-brand-600 transition-colors flex items-center justify-between"
+            >
+              <span>Specialties</span>
+              <span className="text-slate-400">→</span>
+            </a>
+            <a 
+              href="#concerns" 
+              onClick={() => setIsMobileNavOpen(false)}
+              className="px-4 py-3 rounded-2xl text-sm font-bold text-slate-800 hover:bg-brand-50 hover:text-brand-600 transition-colors flex items-center justify-between"
+            >
+              <span>Health Concerns</span>
+              <span className="text-slate-400">→</span>
+            </a>
+            <a 
+              href="#doctors" 
+              onClick={() => setIsMobileNavOpen(false)}
+              className="px-4 py-3 rounded-2xl text-sm font-bold text-slate-800 hover:bg-brand-50 hover:text-brand-600 transition-colors flex items-center justify-between"
+            >
+              <span>Top Doctors</span>
+              <span className="text-slate-400">→</span>
+            </a>
+            <a 
+              href="#how-it-works" 
+              onClick={() => setIsMobileNavOpen(false)}
+              className="px-4 py-3 rounded-2xl text-sm font-bold text-slate-800 hover:bg-brand-50 hover:text-brand-600 transition-colors flex items-center justify-between"
+            >
+              <span>How It Works</span>
+              <span className="text-slate-400">→</span>
+            </a>
+          </div>
+        )}
+      </nav>
+
+      {/* Hero Section Carousel */}
       <header 
-        className="relative overflow-hidden border-b border-slate-100/50 min-h-[500px] lg:h-[540px] max-w-[1600px] mx-auto flex items-center w-full pt-12 pb-12 lg:pt-0 lg:pb-0"
+        onMouseEnter={() => setIsHeroHovered(true)}
+        onMouseLeave={() => setIsHeroHovered(false)}
+        className="relative overflow-hidden border-b border-slate-100/50 min-h-[600px] lg:h-[650px] w-full flex items-center pt-28 pb-16 lg:pt-28 lg:pb-16 transition-all duration-700 bg-cover"
 
         style={{ 
-          backgroundImage: `url('${heroContent.imgUrl}')`, 
+          backgroundImage: `url('${activeSlide.imgUrl || heroContent.imgUrl}')`, 
           backgroundRepeat: "no-repeat", 
-          backgroundPosition: "center right", 
-          backgroundSize: "cover" 
+          backgroundPosition: "right bottom" 
         }}
       >
-        {/* Soft background gradient overlay for high contrast and readability on the left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#faf6f0] via-[#faf6f0]/98 md:via-[#faf6f0]/95 md:via-[45%] to-[#faf6f0]/90 md:to-transparent pointer-events-none z-0" />
+        {/* Soft background gradient overlay for clean contrast on the left text area */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#faf6f0] via-[#faf6f0]/95 md:via-[#faf6f0]/90 md:via-[45%] to-[#faf6f0]/60 md:to-transparent pointer-events-none z-0" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
           <div className="max-w-2xl flex flex-col justify-center space-y-6 text-left">
 
-            <h1 className="text-4xl sm:text-5xl lg:text-[46px] font-extrabold text-slate-800 leading-[1.15] tracking-tight font-poppins">
-              {heroContent.title}
+            <h1 className="text-4xl sm:text-5xl lg:text-[46px] font-extrabold text-slate-800 leading-[1.15] tracking-tight font-poppins transition-opacity duration-300">
+              {activeSlide.title}
             </h1>
 
-            <p className="text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed font-normal">
-              {heroContent.desc}
+            <p className="text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed font-normal transition-opacity duration-300">
+              {activeSlide.desc}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
@@ -1396,8 +1581,6 @@ export default function Home() {
                 </svg>
                 <span>Chat on WhatsApp</span>
               </a>
-
-
             </div>
 
             {/* Live Stats Dynamic Grid */}
@@ -1425,6 +1608,50 @@ export default function Home() {
                 </span>
               </div>
             </div>
+
+            {/* Hero Carousel Navigation Dots & Controls */}
+            {heroSlides.length > 1 && (
+              <div className="flex items-center gap-3 pt-3">
+                {/* Prev Slide Arrow */}
+                <button
+                  onClick={() => setCurrentHeroSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
+                  className="w-8 h-8 rounded-full bg-white/80 border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-white shadow-xs transition-all active:scale-95 cursor-pointer"
+                  title="Previous slide"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+
+                {/* Dot Indicators */}
+                <div className="flex items-center gap-2">
+                  {heroSlides.map((slide, idx) => (
+                    <button
+                      key={slide.id || idx}
+                      onClick={() => setCurrentHeroSlide(idx)}
+                      className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                        idx === currentHeroSlide
+                          ? "w-8 bg-brand-600"
+                          : "w-2.5 bg-slate-300 hover:bg-slate-400"
+                      }`}
+                      title={`Go to slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Next Slide Arrow */}
+                <button
+                  onClick={() => setCurrentHeroSlide((prev) => (prev + 1) % heroSlides.length)}
+                  className="w-8 h-8 rounded-full bg-white/80 border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-white shadow-xs transition-all active:scale-95 cursor-pointer"
+                  title="Next slide"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"/></svg>
+                </button>
+
+                <span className="text-[11px] font-bold text-slate-500 ml-1">
+                  {currentHeroSlide + 1} / {heroSlides.length}
+                </span>
+              </div>
+            )}
+
           </div>
         </div>
       </header>
@@ -1500,9 +1727,13 @@ export default function Home() {
                 <div
                   key={i}
                   onClick={() => openBookingModal(spec.title)}
-                  className="flex-shrink-0 w-[280px] bg-white border border-slate-200 rounded-3xl p-6 shadow-[0_4px_24px_0_rgba(148,163,184,0.18)] hover:shadow-[0_8px_32px_0_rgba(148,163,184,0.28)] hover:border-slate-300 hover:-translate-y-1 transition-all duration-300 group snap-start cursor-pointer flex flex-col items-center text-center"
+                  className="flex-shrink-0 w-[290px] bg-gradient-to-b from-white via-white to-slate-50/60 border border-slate-200/80 rounded-[32px] p-6 shadow-[0_4px_20px_0_rgba(15,23,42,0.06)] hover:shadow-[0_16px_36px_-8px_rgba(225,29,72,0.2)] hover:border-brand-400 transition-all duration-300 group snap-start cursor-pointer flex flex-col items-center text-center relative overflow-hidden"
                 >
-                  <div className="w-32 h-32 rounded-full overflow-hidden mb-6 group-hover:scale-105 transition-transform shadow-md border border-slate-100 flex items-center justify-center bg-slate-50">
+                  {/* Top Subtle Gradient Accent Line */}
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-500 via-rose-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  {/* Specialist Image Container */}
+                  <div className="w-32 h-32 rounded-full overflow-hidden mb-5 group-hover:scale-105 transition-transform duration-300 shadow-md ring-4 ring-slate-100 group-hover:ring-brand-200 flex items-center justify-center bg-slate-50 relative">
                     <img
                       src={spec.img || {
                         "General Physician": "/images/specialists/general-physician.png",
@@ -1519,19 +1750,24 @@ export default function Home() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  
+
+                  {/* Rating Tag */}
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-600 bg-amber-50 border border-amber-200/60 px-2.5 py-0.5 rounded-full mb-2 shadow-2xs">
+                    ★ 4.9 Verified
+                  </span>
+
                   {/* Centered Title */}
-                  <h3 className="text-[17px] font-bold text-slate-800 font-poppins mb-1 tracking-tight">
+                  <h3 className="text-lg font-extrabold text-slate-800 font-poppins mb-1.5 tracking-tight group-hover:text-brand-600 transition-colors">
                     {displayTitle}
                   </h3>
 
                   {/* Centered Description */}
-                  <p className="text-xs text-slate-400 font-medium mb-3 px-2 leading-relaxed">
+                  <p className="text-xs text-slate-500 font-medium mb-3 px-2 leading-relaxed line-clamp-2">
                     {spec.desc}
                   </p>
                   
-                  {/* Centered Price */}
-                  <p className="text-slate-500 text-sm font-semibold mb-5 font-dmsans">
+                  {/* Centered Fee */}
+                  <p className="text-slate-700 text-xs font-bold mb-4 font-dmsans bg-slate-100/80 px-3.5 py-1 rounded-full border border-slate-200/60">
                     {spec.fee}
                   </p>
 
@@ -1542,7 +1778,7 @@ export default function Home() {
                         e.stopPropagation();
                         openBookingModal(spec.title);
                       }}
-                      className="bg-brand-600 hover:bg-brand-700 text-white text-[11px] font-bold py-2.5 px-1 rounded-xl transition-all shadow-sm active:scale-95 text-center whitespace-nowrap"
+                      className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-xs font-bold py-2.5 px-1 rounded-xl transition-all shadow-md shadow-brand-200 hover:shadow-brand-300 active:scale-95 text-center whitespace-nowrap"
                     >
                       Consult now
                     </button>
@@ -1551,7 +1787,7 @@ export default function Home() {
                         e.stopPropagation();
                         openBookingModal(spec.title);
                       }}
-                      className="border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-bold py-2.5 px-1 rounded-xl transition-all active:scale-95 text-center whitespace-nowrap"
+                      className="border border-slate-200/90 hover:bg-slate-100/80 text-slate-700 text-xs font-bold py-2.5 px-1 rounded-xl transition-all active:scale-95 text-center whitespace-nowrap"
                     >
                       Consult later
                     </button>
@@ -1634,23 +1870,33 @@ export default function Home() {
                 {filteredConcerns.map((c, idx) => (
                   <div
                     key={idx}
-                    className="symptom-card flex-shrink-0 w-80 bg-white border border-slate-100 rounded-[28px] p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between snap-start"
+                    className="symptom-card flex-shrink-0 w-80 bg-white border border-slate-200/80 rounded-[32px] p-5 shadow-[0_4px_20px_0_rgba(15,23,42,0.05)] hover:shadow-xl hover:border-brand-400 transition-all duration-300 flex flex-col justify-between snap-start group relative overflow-hidden"
                   >
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+
                     <div>
-                      <SymptomIllustration symptomKey={c.key} imageUrl={symptomImgMap[c.key]} className="h-44" />
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-base font-bold text-slate-800 font-poppins">{c.name}</h3>
-                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                          {c.count}
-                        </span>
+                      <SymptomIllustration symptomKey={c.key} imageUrl={symptomImgMap[c.key]} className="h-44 group-hover:scale-102 transition-transform duration-300" />
+                      <div className="flex justify-between items-start mb-2 mt-2">
+                        <h3 className="text-base font-extrabold text-slate-800 font-poppins group-hover:text-brand-600 transition-colors">{c.name}</h3>
                       </div>
-                      <p className="text-xs text-brand-600 font-semibold mb-4">Recommended: {c.specialist}</p>
+                      <p className="text-xs text-slate-500 font-medium mb-3 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                        Recommended: <strong className="text-slate-800">{c.specialist}</strong>
+                      </p>
+                      <p className="text-xs text-slate-500 font-medium mb-2 flex items-center gap-1">
+                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                         100% <strong className="text-slate-800">Private & Confidential</strong>
+                       </p>
+                       <p className="text-xs text-slate-500 font-medium mb-1 flex items-center gap-1">
+                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                         <strong className="text-slate-800">Trusted Doctor</strong>
+                       </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mt-2 border-t border-slate-100 pt-4">
                       <button
                         onClick={() => openBookingModal(c.specialist)}
-                        className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-xs font-bold py-3 px-4 rounded-xl transition-all shadow-md shadow-brand-100 active:scale-95"
+                        className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-xs font-bold py-3 px-4 rounded-xl transition-all shadow-md shadow-brand-200 active:scale-95 text-center"
                       >
                         Consult
                       </button>
@@ -1658,7 +1904,7 @@ export default function Home() {
                         href={`https://wa.me/919861787335?text=Hi,%20I%20am%20facing%20${encodeURIComponent(c.name)}%20and%20would%20like%20to%20connect%20with%20a%20doctor.`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="border border-emerald-100 bg-emerald-50/55 hover:bg-emerald-50 text-emerald-800 text-xs font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                        className="border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/80 text-emerald-800 text-xs font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 active:scale-95"
                       >
                         <svg className="w-3.5 h-3.5 fill-emerald-600" viewBox="0 0 448 512">
                           <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z" />
@@ -1972,45 +2218,57 @@ export default function Home() {
           {/* Doctor Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {doctors.map((doc, i) => (
-              <div key={i} className="bg-white border border-slate-100 rounded-[28px] p-6 text-center shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300">
-                <div className="relative w-24 h-24 mx-auto mb-4">
-                  <div className={`w-full h-full rounded-full p-1 bg-gradient-to-tr ${doc.gradient || "from-brand-500 to-indigo-400"}`}>
-                    <div className="w-full h-full bg-slate-100 rounded-full overflow-hidden flex items-center justify-center relative border border-white">
-                      <img 
-                        src={doc.img && (doc.img.startsWith("http") || doc.img.startsWith("/")) ? doc.img : `https://placehold.co/150x150/${
-                          i % 5 === 0 ? "e0f2fe/075985" :
-                          i % 5 === 1 ? "e2fbf0/047857" :
-                          i % 5 === 2 ? "fce7f3/be185d" :
-                          i % 5 === 3 ? "fef3c7/d97706" :
-                          "f3e8ff/6b21a8"
-                        }?text=${encodeURIComponent(doc.img || doc.name)}`} 
-                        alt={doc.name} 
-                        className="w-full h-full object-cover" 
-                      />
+              <div key={i} className="bg-gradient-to-b from-white to-slate-50/80 border border-slate-200/80 rounded-[32px] p-6 text-center shadow-[0_4px_20px_0_rgba(15,23,42,0.06)] hover:shadow-2xl hover:border-brand-400 transition-all duration-300 group relative overflow-hidden flex flex-col items-center justify-between">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 via-rose-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                <div className="w-full flex flex-col items-center">
+                  <div className="relative w-24 h-24 mx-auto mb-3">
+                    <div className={`w-full h-full rounded-full p-1 bg-gradient-to-tr ${doc.gradient || "from-brand-500 to-indigo-400"} group-hover:scale-105 transition-transform duration-300`}>
+                      <div className="w-full h-full bg-slate-100 rounded-full overflow-hidden flex items-center justify-center relative border-2 border-white">
+                        <img 
+                          src={doc.img && (doc.img.startsWith("http") || doc.img.startsWith("/")) ? doc.img : `https://placehold.co/150x150/${
+                            i % 5 === 0 ? "e0f2fe/075985" :
+                            i % 5 === 1 ? "e2fbf0/047857" :
+                            i % 5 === 2 ? "fce7f3/be185d" :
+                            i % 5 === 3 ? "fef3c7/d97706" :
+                            "f3e8ff/6b21a8"
+                          }?text=${encodeURIComponent(doc.img || doc.name)}`} 
+                          alt={doc.name} 
+                          className="w-full h-full object-cover" 
+                        />
+                      </div>
                     </div>
+                    <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></span>
                   </div>
-                  <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></span>
+                  
+                  {/* Verified Badge & Specialty */}
+                  <span className={`inline-block text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-2 ${
+                    i % 5 === 0 ? "bg-brand-50 text-brand-700 border border-brand-200/50" :
+                    i % 5 === 1 ? "bg-cyan-50 text-cyan-700 border border-cyan-200/50" :
+                    i % 5 === 2 ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50" :
+                    i % 5 === 3 ? "bg-pink-50 text-pink-700 border border-pink-200/50" :
+                    "bg-violet-50 text-violet-700 border border-violet-200/50"
+                  }`}>
+                    {doc.spec}
+                  </span>
+                  
+                  <h3 className="text-sm sm:text-base font-extrabold text-slate-800 font-poppins leading-tight group-hover:text-brand-600 transition-colors mb-1">{doc.name}</h3>
+                  <p className="text-xs text-slate-400 font-medium mb-1">{doc.exp}</p>
+                  
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50/80 px-2 py-0.5 rounded-full border border-amber-200/50 mb-3">
+                    ★ {(4.6 + (i * 7 % 4) * 0.1).toFixed(1)} ({[87, 120, 143, 96, 112, 78, 134, 105][i % 8]}+ consults)
+                  </span>
                 </div>
                 
-                <span className={`inline-block text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-3 ${
-                  i % 5 === 0 ? "bg-brand-50 text-brand-700" :
-                  i % 5 === 1 ? "bg-cyan-50 text-cyan-700" :
-                  i % 5 === 2 ? "bg-emerald-50 text-emerald-700" :
-                  i % 5 === 3 ? "bg-pink-50 text-pink-700" :
-                  "bg-violet-50 text-violet-700"
-                }`}>
-                  {doc.spec}
-                </span>
-                
-                <h3 className="text-sm sm:text-base font-bold text-slate-800 font-poppins min-h-[3rem] flex items-center justify-center leading-tight">{doc.name}</h3>
-                <p className="text-xs text-slate-400">{doc.exp}</p>
-                
-                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-emerald-600 font-bold flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                <div className="w-full mt-4 pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                  <span className="text-emerald-600 font-extrabold flex items-center gap-1.5 text-[11px]">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                     Live Online
                   </span>
-                  <button onClick={() => openBookingModal(doc.focus)} className="bg-slate-50 hover:bg-brand-500 hover:text-white border border-slate-200 hover:border-brand-500 text-slate-700 font-bold px-4 py-2 rounded-xl transition-all text-xs">
+                  <button 
+                    onClick={() => openBookingModal(doc.focus)} 
+                    className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold px-4 py-2 rounded-xl transition-all shadow-md shadow-brand-200 text-xs active:scale-95"
+                  >
                     Consult
                   </button>
                 </div>
@@ -2309,7 +2567,7 @@ export default function Home() {
             <div className="lg:col-span-2">
               <div className="flex flex-col sm:flex-row items-center gap-6 text-left">
                 <img
-                  src="/logo.png"
+                  src="/logo-white.png"
                   alt="Addy Fitness Logo"
                   className="rounded-lg object-contain shrink-0"
                   style={{ width: '200px', height: '200px' }}
@@ -2535,22 +2793,7 @@ export default function Home() {
                 />
               </div>
 
-              <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex items-start gap-3 mt-2">
-                <input
-                  type="checkbox"
-                  id="sync-addy"
-                  checked={syncAddy}
-                  onChange={(e) => setSyncAddy(e.target.checked)}
-                  className="mt-1 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                />
-                <label
-                  htmlFor="sync-addy"
-                  className="text-[11px] text-indigo-900 leading-relaxed cursor-pointer select-none"
-                >
-                  <span className="block font-bold">Synchronize with www.addyfitness.com</span>
-                  Share session parameters to generate custom metabolic lifestyle workout targets automatically alongside clinical care plans.
-                </label>
-              </div>
+
 
               <button
                 type="submit"
