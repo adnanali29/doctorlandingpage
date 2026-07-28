@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <!-- Blueprint Rolled Paper Base Sheet -->
+  <!-- Main Paper Rect -->
+  <path d="M 28 20 H 140 A 6 6 0 0 1 146 26 V 134 A 6 6 0 0 1 140 140 H 42 A 16 16 0 0 1 26 124 V 26 A 6 6 0 0 1 32 20 Z" fill="#FFFDFB" stroke="#E07A3A" stroke-width="7" stroke-linejoin="round" />
+  
+  <!-- Rolled Edge Flap on Left -->
+  <path d="M 32 20 H 24 A 6 6 0 0 0 18 26 V 124 A 14 14 0 0 0 32 138 H 42 A 16 16 0 0 1 26 124 V 26 A 6 6 0 0 1 32 20 Z" fill="#FBF6F0" stroke="#E07A3A" stroke-width="7" stroke-linejoin="round" />
+
+  <!-- Dimension Grid Lines & Arrows -->
+  <path d="M 44 48 H 128 M 44 110 H 128" stroke="#555555" stroke-width="2.5" stroke-dasharray="4 4" />
+  <path d="M 44 48 V 110 M 128 48 V 110" stroke="#444444" stroke-width="2.5" />
+  
+  <!-- Dimension Arrows -->
+  <path d="M 44 48 L 51 43 M 44 48 L 51 53" stroke="#333" stroke-width="3" stroke-linecap="round" />
+  <path d="M 128 48 L 121 43 M 128 48 L 121 53" stroke="#333" stroke-width="3" stroke-linecap="round" />
+  <path d="M 44 110 L 51 105 M 44 110 L 51 115" stroke="#333" stroke-width="3" stroke-linecap="round" />
+  <path d="M 128 110 L 121 105 M 128 110 L 121 115" stroke="#333" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Main Architectural Compass ('A' Symbol) -->
+  <!-- Top Hinge Cap -->
+  <circle cx="86" cy="42" r="7" fill="#E07A3A" />
+  <rect x="83" y="32" width="6" height="8" rx="2" fill="#E07A3A" />
+
+  <!-- Curved Crossbar Arc -->
+  <path d="M 62 76 Q 86 90 110 76" fill="none" stroke="#E07A3A" stroke-width="10" stroke-linecap="round" />
+
+  <!-- Left Leg -->
+  <path d="M 83 45 L 60 108 C 57 114 63 118 69 115 L 85 49 Z" fill="#E07A3A" />
+
+  <!-- Right Leg -->
+  <path d="M 89 45 L 112 108 C 115 114 109 118 103 115 L 87 49 Z" fill="#E07A3A" />
+
+  <!-- Bottom Title Box in Right Corner -->
+  <path d="M 88 120 H 146 M 88 120 V 140 M 116 120 V 140 M 116 130 H 146" stroke="#444444" stroke-width="3.5" stroke-linecap="round" fill="none" />
+</svg>
