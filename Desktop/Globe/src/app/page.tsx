@@ -638,16 +638,16 @@ export default function Home() {
       parentGroup.add(line);
     };
 
-    // Load Natural Earth Land Vectors
-    fetch("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson")
+    // Load Natural Earth Land Vectors locally (from public directory for instant load & reliability)
+    fetch("/ne_110m_land.geojson")
       .then((res) => res.json())
       .then((data) => {
         sphereMat.map = createLandWaterTexture(data);
         sphereMat.needsUpdate = true;
         renderVectorLandmasses(data);
       })
-      .catch(() => {
-        console.warn("GeoJSON land vector fallback enabled.");
+      .catch((err) => {
+        console.warn("GeoJSON land vector fallback enabled:", err);
       });
 
     createVectorArcsAndFlyPoints();
