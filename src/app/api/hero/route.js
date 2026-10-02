@@ -6,20 +6,20 @@ export async function GET() {
   const defaultSlides = [
     {
       id: "slide-1",
-      title: "Skip the queue. Consult doctors online at home",
-      desc: "Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.",
+      title: "Consult a Doctor Online – From the Comfort of Your Home",
+      desc: "Get connected with a qualified doctor for an online consultation without visiting a clinic. Instant video call, digital prescriptions, and expert medical guidance.",
       imgUrl: "/hero_banner.png"
     },
     {
       id: "slide-2",
-      title: "Verified NMC Doctors Available 24/7",
-      desc: "Connect directly with top certified medical specialists within minutes. Instant video calls, digital prescriptions & personalized care plans.",
+      title: "Verified Doctors Available When You Need Them",
+      desc: "Connect directly with experienced medical specialists within minutes. Private consultations & legal digital prescriptions.",
       imgUrl: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=1920&auto=format&fit=crop"
     },
     {
       id: "slide-3",
-      title: "Instant Digital Prescriptions & Follow-ups",
-      desc: "Receive legally valid e-prescriptions on your phone immediately following your video session.",
+      title: "Instant Digital Prescriptions Sent To Your Phone",
+      desc: "Receive legally valid e-prescriptions on your phone immediately following your private online consultation.",
       imgUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=1920&auto=format&fit=crop"
     }
   ];

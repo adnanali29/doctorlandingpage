@@ -785,16 +785,16 @@ export default function Home() {
 
   // Dynamic CMS States loaded from database
   const [heroContent, setHeroContent] = useState({
-    title: "Skip the queue. Consult doctors online at home",
-    desc: "Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.",
+    title: "Consult a Doctor Online – From the Comfort of Your Home",
+    desc: "Get connected with a qualified doctor for an online consultation without visiting a clinic. Instant video call, digital prescriptions, and expert medical guidance.",
     imgUrl: "/hero_banner.png"
   });
 
   const [heroSlides, setHeroSlides] = useState([
     {
       id: "slide-1",
-      title: "Skip the queue. Consult doctors online at home",
-      desc: "Empowering healthcare diagnostics in minutes. Experience secure 1-on-1 private video medical assessments, instant legal digital prescriptions, and certified fitness syncing.",
+      title: "Consult a Doctor Online – From the Comfort of Your Home",
+      desc: "Get connected with a qualified doctor for an online consultation without visiting a clinic. Instant video call, digital prescriptions, and expert medical guidance.",
       imgUrl: "/hero_banner.png"
     }
   ]);
@@ -1461,9 +1461,9 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => openBookingModal()}
-              className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold text-xs sm:text-sm px-5 sm:px-6 py-2.5 rounded-full shadow-md shadow-brand-200 hover:shadow-brand-300 transition-all hover:scale-[1.03] active:scale-95 flex items-center gap-1.5"
+              className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold text-xs sm:text-sm px-5 sm:px-6 py-2.5 rounded-full shadow-md shadow-brand-200 hover:shadow-brand-300 transition-all hover:scale-[1.03] active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
-              <span>Consult Now</span>
+              <span>Book Consultation</span>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7-7 7M3 12h18" />
               </svg>
@@ -1544,9 +1544,14 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#FAF0EE] via-[#FAF0EE]/95 md:via-[#FAF0EE]/90 md:via-[50%] to-[#FAF0EE]/40 md:to-transparent pointer-events-none z-0" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-          <div className="max-w-2xl flex flex-col justify-center space-y-6 text-left">
+          <div className="max-w-2xl flex flex-col justify-center space-y-5 text-left">
 
-            <h1 className="text-4xl sm:text-5xl lg:text-[46px] font-extrabold text-slate-800 leading-[1.15] tracking-tight font-poppins transition-opacity duration-300">
+            <div className="inline-flex items-center gap-2 bg-brand-50/90 border border-brand-200/60 px-3.5 py-1.5 rounded-full w-fit">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-bold text-brand-700">Verified Doctors Online 24/7</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-extrabold text-slate-800 leading-[1.18] tracking-tight font-poppins transition-opacity duration-300">
               {activeSlide.title}
             </h1>
 
@@ -1554,19 +1559,19 @@ export default function Home() {
               {activeSlide.desc}
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full pt-1">
               <button
                 onClick={() => openBookingModal()}
-                className="w-full sm:w-auto bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold px-6 py-3.5 rounded-2xl shadow-xl shadow-brand-200 hover:shadow-brand-300 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm tracking-wide flex items-center justify-center gap-2"
+                className="w-full sm:w-auto bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold px-7 py-3.5 rounded-2xl shadow-xl shadow-brand-200 hover:shadow-brand-300 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm tracking-wide flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Consult Now</span>
+                <span>Book Your Consultation</span>
                 <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                 </svg>
               </button>
               
               <a
-                href="https://wa.me/919861787335?text=Hello,%20I%20would%20like%20to%20consult%20a%20specialist%20online."
+                href="https://wa.me/919861787335?text=Hello,%20I%20would%20like%20to%20consult%20a%20doctor%20online."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3.5 rounded-2xl shadow-xl shadow-emerald-100 hover:shadow-emerald-200 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm tracking-wide flex items-center justify-center gap-2"
@@ -1578,28 +1583,56 @@ export default function Home() {
               </a>
             </div>
 
+            {/* 4 Trust Bullet Points */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+              <div className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold">
+                <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Online Consultation</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold">
+                <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Qualified Doctors</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold">
+                <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>From Home</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold">
+                <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>100% Private</span>
+              </div>
+            </div>
+
             {/* Live Stats Dynamic Grid */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200/60 max-w-md">
-              <div className="bg-white/70 backdrop-blur-sm p-3.5 rounded-2xl border border-white/95 shadow-sm hover:shadow transition-all duration-300 flex flex-col justify-center">
-                <span className="block text-sm sm:text-base font-extrabold text-brand-600 uppercase tracking-wide leading-tight">
-                  Connect
+            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-200/60 max-w-md">
+              <div className="bg-white/75 backdrop-blur-sm p-3 rounded-2xl border border-white shadow-sm hover:shadow transition-all duration-300">
+                <span className="block text-base sm:text-lg font-extrabold text-brand-600">
+                  10-15 Min
                 </span>
-                <span className="block text-[11px] font-bold text-slate-800 tracking-wide mt-0.5">
-                  Instantly
-                </span>
-              </div>
-              <div className="bg-white/70 backdrop-blur-sm p-3.5 rounded-2xl border border-white/95 shadow-sm hover:shadow transition-all duration-300">
-                <span className="block text-xl sm:text-2xl font-extrabold text-slate-800">
-                  580
-                </span>
-                <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">
-                  Sessions Done
+                <span className="block text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-0.5">
+                  Avg Response
                 </span>
               </div>
-              <div className="bg-white/70 backdrop-blur-sm p-3.5 rounded-2xl border border-white/95 shadow-sm hover:shadow transition-all duration-300">
-                <span className="block text-xl sm:text-2xl font-extrabold text-slate-800">4.0★</span>
-                <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">
-                  Clarity Score
+              <div className="bg-white/75 backdrop-blur-sm p-3 rounded-2xl border border-white shadow-sm hover:shadow transition-all duration-300">
+                <span className="block text-base sm:text-lg font-extrabold text-slate-800">
+                  10,000+
+                </span>
+                <span className="block text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-0.5">
+                  Consultations
+                </span>
+              </div>
+              <div className="bg-white/75 backdrop-blur-sm p-3 rounded-2xl border border-white shadow-sm hover:shadow transition-all duration-300">
+                <span className="block text-base sm:text-lg font-extrabold text-amber-600">4.9★</span>
+                <span className="block text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-0.5">
+                  Patient Rating
                 </span>
               </div>
             </div>
@@ -1613,13 +1646,13 @@ export default function Home() {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
             <div>
               <span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
-                Medical Council Specialties
+                Medical Specialties
               </span>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
                 Consult Verified Specialists
               </h2>
               <p className="text-slate-500 mt-2 max-w-xl text-sm sm:text-base">
-                Meticulously selected doctors offering immediate 1-on-1 virtual appointments across crucial health realms.
+                Book a private 1-on-1 online consultation with qualified doctors across key medical specialties.
               </p>
             </div>
             {/* Control Buttons & See All */}
@@ -1723,25 +1756,16 @@ export default function Home() {
                     {spec.fee}
                   </p>
 
-                  {/* 2 CTA Buttons */}
-                  <div className="grid grid-cols-2 gap-2.5 w-full mt-auto">
+                  {/* CTA Button */}
+                  <div className="w-full mt-auto">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         openBookingModal(spec.title);
                       }}
-                      className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-xs font-bold py-2.5 px-1 rounded-xl transition-all shadow-md shadow-brand-200 hover:shadow-brand-300 active:scale-95 text-center whitespace-nowrap"
+                      className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-all shadow-md shadow-brand-200 hover:shadow-brand-300 active:scale-95 text-center cursor-pointer"
                     >
-                      Consult now
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openBookingModal(spec.title);
-                      }}
-                      className="border border-slate-200/90 hover:bg-slate-100/80 text-slate-700 text-xs font-bold py-2.5 px-1 rounded-xl transition-all active:scale-95 text-center whitespace-nowrap"
-                    >
-                      Consult later
+                      Book Consultation
                     </button>
                   </div>
                 </div>
@@ -1757,13 +1781,13 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6">
             <div>
               <span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
-                Live Symptom Matching
+                Health Concerns
               </span>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
-                Identify Your Clinical Symptoms
+                What Can You Consult a Doctor About?
               </h2>
               <p className="text-slate-500 mt-2 max-w-xl text-sm sm:text-base">
-                Search or click common issues to seamlessly trigger the correct medical specialist matching engine.
+                Select your symptom or health concern to connect with the right specialist immediately.
               </p>
             </div>
 
@@ -1775,7 +1799,7 @@ export default function Home() {
                   type="text"
                   value={symptomSearchQuery}
                   onChange={(e) => setSymptomSearchQuery(e.target.value)}
-                  placeholder="Search symptom..."
+                  placeholder="Search symptom or concern..."
                   className="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 rounded-2xl px-4 py-2.5 pl-10 text-xs focus:outline-none shadow-sm transition-all text-slate-800 font-medium"
                 />
                 <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2060,17 +2084,17 @@ export default function Home() {
       </div>
 
       {/* Why Trust Us Section */}
-      <section id="why-trust-us" className="py-8 relative overflow-hidden" style={{ backgroundColor: '#faf5ec' }}>
+      <section id="why-trust-us" className="py-12 relative overflow-hidden" style={{ backgroundColor: '#faf5ec' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+          <div className="text-center max-w-2xl mx-auto mb-14">
             <span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
-              Our Quality Standard
+              Trust &amp; Quality Standards
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
-              Why Patients Trust Addy Fitness
+              Why Patients Choose Our Online Consultation
             </h2>
-            <p className="text-slate-500 mt-2 text-sm sm:text-base">
-              Pioneering safe, encrypted digital diagnostics tied directly with legal medical compliance protocols.
+            <p className="text-slate-600 mt-2 text-sm sm:text-base">
+              Private, secure, and legally compliant healthcare delivered directly to your home.
             </p>
           </div>
 
@@ -2082,9 +2106,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">Confidential 1 on 1</h3>
+              <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">100% Private &amp; Secure</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Encrypted high-definition channels keeping medical history strictly confidential between provider and patient.
+                Encrypted private video consultations ensuring your medical discussions and history remain completely confidential.
               </p>
             </div>
 
@@ -2095,9 +2119,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">Digital Prescription</h3>
+              <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">Legal Digital Prescription</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Instantly download legal e-prescriptions with verified doctor digital stamps accepted at all major pharmacies.
+                Instantly receive a digitally signed medical prescription valid at all physical and online pharmacies nationwide.
               </p>
             </div>
 
@@ -2105,12 +2129,12 @@ export default function Home() {
             <div className="bg-[#fafcfe] border border-slate-100 rounded-[28px] p-6 hover:shadow-xl hover:border-brand-200 transition-all duration-300 hover:-translate-y-1">
               <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">98% Clear Rating</h3>
+              <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">Qualified Doctors</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Top clarity scoring where doctors explain diagnostics clearly without complex clinical medical jargon.
+                Consult verified MBBS, MD, and MS practitioners with extensive clinical outpatient experience.
               </p>
             </div>
 
@@ -2121,9 +2145,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">Instant Prescription</h3>
+              <h3 className="text-base font-bold text-slate-800 font-poppins mb-2">Fast &amp; Convenient</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                No clinic travel time or delays. Connect, get examined, and receive help in less than 10 minutes.
+                Zero travel time or crowded waiting rooms. Book, speak with a doctor, and get treated from anywhere.
               </p>
             </div>
 
@@ -2138,12 +2162,12 @@ export default function Home() {
                     </svg>
                   </div>
                   <div className="flex items-center gap-1 bg-emerald-500/80 px-2 py-0.5 rounded text-[9px] font-bold">
-                    <span>74 bpm</span>
+                    <span>Active Support</span>
                   </div>
                 </div>
-                <h3 className="text-base font-bold font-poppins mb-1.5">AddyFitness Sync</h3>
+                <h3 className="text-base font-bold font-poppins mb-1.5">Personalized Care &amp; Diet</h3>
                 <p className="text-[11px] text-slate-100 leading-relaxed font-normal">
-                  Coordinated therapeutic routines linking physical therapy and diet alongside prescription metrics with{" "}
+                  Receive personalized lifestyle, nutrition, and exercise advice alongside your prescription with{" "}
                   <span className="underline">www.addyfitness.com</span>.
                 </p>
               </div>
@@ -2157,13 +2181,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
-              Our Digital Council
+              Our Doctor Panel
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
-              Meet Active Registered Doctors
+              Meet Our Qualified Doctors
             </h2>
             <p className="text-slate-500 mt-2 text-sm sm:text-base">
-              Each panelist maintains a pristine license registration and years of dedicated clinical expertise.
+              Every doctor on our panel is fully certified, registered, and experienced in telemedicine care.
             </p>
           </div>
 
@@ -2215,13 +2239,13 @@ export default function Home() {
                 <div className="w-full mt-4 pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs">
                   <span className="text-emerald-600 font-extrabold flex items-center gap-1.5 text-[11px]">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                    Live Online
+                    Available
                   </span>
                   <button 
                     onClick={() => openBookingModal(doc.focus)} 
-                    className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold px-4 py-2 rounded-xl transition-all shadow-md shadow-brand-200 text-xs active:scale-95"
+                    className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold px-4 py-2 rounded-xl transition-all shadow-md shadow-brand-200 text-xs active:scale-95 cursor-pointer"
                   >
-                    Consult
+                    Consult This Doctor
                   </button>
                 </div>
               </div>
@@ -2241,16 +2265,16 @@ export default function Home() {
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-widest uppercase mb-4 border" style={{ background: 'rgba(225,29,72,0.1)', borderColor: 'rgba(225,29,72,0.25)', color: '#fb7185' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping inline-block" />
-              Booking Flow
+              Simple 3-Step Process
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold font-poppins mb-3 leading-tight" style={{ color: '#ffffff' }}>
-              Three Steps To{' '}
+              How To{' '}
               <span style={{ background: 'linear-gradient(90deg, #fb7185, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Connected Care
+                Consult A Doctor Online
               </span>
             </h2>
             <p className="text-sm sm:text-base" style={{ color: 'rgba(148,163,184,0.9)' }}>
-              Follow this step-by-step flow to connect with a registered physician instantly.
+              Get medical guidance and your digital prescription from home in 3 simple steps.
             </p>
           </div>
 
@@ -2293,9 +2317,9 @@ export default function Home() {
 
               <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(251,113,133,0.12)', color: '#fb7185' }}>Step One</span>
 
-              <h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Select Your Symptom</h3>
+              <h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Select Your Health Concern</h3>
               <p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
-                Choose from our specialized medical fields, or use our live AI-filter to instantly match your symptoms to the right specialist.
+                Choose from our medical specialties or select your symptom to find the right doctor for your consultation.
               </p>
 
               <div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #e11d48, #f43f5e)' }} />
@@ -2321,9 +2345,9 @@ export default function Home() {
 
               <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>Step Two</span>
 
-              <h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Pay &amp; Connect Securely</h3>
+              <h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Share Details &amp; Book</h3>
               <p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
-                Submit your health metrics in one simplified stage, finalize your secure booking, and instantly receive your confirmed consultation details.
+                Fill out the quick consultation form with your basic details and preferred time slot in under a minute.
               </p>
 
               <div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #4f46e5, #818cf8)' }} />
@@ -2349,9 +2373,9 @@ export default function Home() {
 
               <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase mb-3" style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399' }}>Step Three</span>
 
-              <h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Get Your Prescription</h3>
+              <h3 className="text-xl font-bold font-poppins mb-3" style={{ color: '#f1f5f9' }}>Video Consult &amp; Prescription</h3>
               <p className="text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
-                Download your digitally stamped legal prescription instantly, request follow-up schedules, and sync your fitness care plan.
+                Speak 1-on-1 with the doctor and download your digitally signed medical prescription immediately to your phone.
               </p>
 
               <div className="mt-6 w-12 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
@@ -2365,18 +2389,126 @@ export default function Home() {
               onClick={() => openBookingModal()}
               className="bg-gradient-to-r from-brand-500 to-indigo-500 hover:from-brand-600 hover:to-indigo-600 text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-98 text-sm tracking-wide inline-flex items-center gap-2 cursor-pointer"
             >
-              Start Your Consultation Now
+              <span>Book Your Consultation Now</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
               </svg>
             </button>
-            <p className="mt-3 text-xs" style={{ color: 'rgba(148,163,184,0.6)' }}>No appointment needed · Available 24/7 · MCI-verified doctors</p>
+            <p className="mt-3 text-xs" style={{ color: 'rgba(148,163,184,0.6)' }}>Available 24/7 · Verified Doctors · 100% Private</p>
           </div>
 
         </div>
       </section>
+
+      {/* Patient Testimonials Section */}
+      <section className="py-14 bg-white relative overflow-hidden border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-xs font-bold text-brand-600 tracking-widest uppercase block mb-2">
+              Patient Experiences
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-poppins">
+              What Patients Say About Us
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm sm:text-base">
+              Real feedback from patients who consulted our doctors from home.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Testimonial 1 */}
+            <div className="bg-slate-50/70 border border-slate-200/70 rounded-3xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all hover:border-brand-200">
+              <div>
+                <div className="flex items-center gap-1 text-amber-500 mb-3">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <span key={idx} className="text-sm">★</span>
+                  ))}
+                  <span className="text-[11px] font-bold text-slate-500 ml-1.5">5.0</span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed font-medium mb-4 italic">
+                  "I was able to speak with a general physician within 10 minutes from home. The doctor was patient and gave clear advice and a digital prescription right away."
+                </p>
+              </div>
+              <div className="border-t border-slate-200/60 pt-3 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">Rahul S.</h4>
+                  <span className="text-[10px] text-slate-500">General Health Consultation</span>
+                </div>
+                <span className="text-[9px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200/50">Verified</span>
+              </div>
+            </div>
+
+            {/* Testimonial 2 */}
+            <div className="bg-slate-50/70 border border-slate-200/70 rounded-3xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all hover:border-brand-200">
+              <div>
+                <div className="flex items-center gap-1 text-amber-500 mb-3">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <span key={idx} className="text-sm">★</span>
+                  ))}
+                  <span className="text-[11px] font-bold text-slate-500 ml-1.5">5.0</span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed font-medium mb-4 italic">
+                  "Very reassuring consultation. The gynaecologist explained my symptoms clearly, helped me adjust my medications, and guided me on diet."
+                </p>
+              </div>
+              <div className="border-t border-slate-200/60 pt-3 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">Priya M.</h4>
+                  <span className="text-[10px] text-slate-500">Gynaecology Consultation</span>
+                </div>
+                <span className="text-[9px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200/50">Verified</span>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-slate-50/70 border border-slate-200/70 rounded-3xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all hover:border-brand-200">
+              <div>
+                <div className="flex items-center gap-1 text-amber-500 mb-3">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <span key={idx} className="text-sm">★</span>
+                  ))}
+                  <span className="text-[11px] font-bold text-slate-500 ml-1.5">5.0</span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed font-medium mb-4 italic">
+                  "Discussed my blood sugar and cholesterol reports online. The specialist spent 20 minutes explaining how to manage it with simple lifestyle changes."
+                </p>
+              </div>
+              <div className="border-t border-slate-200/60 pt-3 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">Amit K.</h4>
+                  <span className="text-[10px] text-slate-500">Diabetes &amp; Lifestyle</span>
+                </div>
+                <span className="text-[9px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200/50">Verified</span>
+              </div>
+            </div>
+
+            {/* Testimonial 4 */}
+            <div className="bg-slate-50/70 border border-slate-200/70 rounded-3xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all hover:border-brand-200">
+              <div>
+                <div className="flex items-center gap-1 text-amber-500 mb-3">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <span key={idx} className="text-sm">★</span>
+                  ))}
+                  <span className="text-[11px] font-bold text-slate-500 ml-1.5">5.0</span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed font-medium mb-4 italic">
+                  "Saved hours of traveling and waiting at a physical clinic. Great experience for skin allergy consultation from the comfort of my home."
+                </p>
+              </div>
+              <div className="border-t border-slate-200/60 pt-3 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">Sneha D.</h4>
+                  <span className="text-[10px] text-slate-500">Skin &amp; Allergies</span>
+                </div>
+                <span className="text-[9px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200/50">Verified</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Why Trust Us — Merged Section */}
-      <section className="py-10 bg-gradient-to-b from-white to-[#faf6f0]/30 relative overflow-hidden">
+      <section className="py-12 bg-gradient-to-b from-white to-[#faf6f0]/30 relative overflow-hidden">
         {/* Subtle background blobs */}
         <div className="absolute top-0 left-0 w-96 h-96 bg-brand-50/40 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-80 h-80 bg-indigo-50/30 rounded-full blur-[100px] pointer-events-none" />
@@ -2384,25 +2516,25 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
           {/* Centered Heading */}
-          <div className="text-center max-w-3xl mx-auto mb-8">
-            <span className="text-xs font-extrabold text-brand-600 tracking-widest uppercase block mb-1.5">Our Advantage Matrix</span>
+          <div className="text-center max-w-3xl mx-auto mb-10">
+            <span className="text-xs font-extrabold text-brand-600 tracking-widest uppercase block mb-1.5">Why Consult Online</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-poppins leading-tight">
-              Expert Virtual Consultations &amp; Instant Digital Prescriptions
+              Everything You Need For Quick &amp; Safe Care
             </h2>
             <p className="text-slate-500 mt-2 text-xs sm:text-sm leading-relaxed max-w-xl mx-auto">
               Skip the waiting room &mdash; connect with verified doctors online, get a diagnosis, and receive your digital prescription instantly from home.
             </p>
           </div>
 
-          {/* Grid Container for USPs only (Graph removed) - Realigned & Animated */}
+          {/* Grid Container for USPs only */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {/* Card 1 */}
             <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:scale-[1.03] flex flex-col items-center text-center hover:border-brand-200">
               <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center shadow-sm mb-4">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
-              <h3 className="text-sm font-bold text-slate-800 font-poppins mb-2">24&times;7 Expert Consultations</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">Connect with certified doctors anytime through instant chat or scheduled video consultations.</p>
+              <h3 className="text-sm font-bold text-slate-800 font-poppins mb-2">24&times;7 Availability</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">Connect with certified doctors anytime through scheduled or instant video consultations.</p>
             </div>
 
             {/* Card 2 */}
@@ -2420,7 +2552,7 @@ export default function Home() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
               </div>
               <h3 className="text-sm font-bold text-slate-800 font-poppins mb-2">Secure &amp; Confidential</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">Your health records and prescriptions are protected with complete privacy and AES-256 encryption.</p>
+              <p className="text-xs text-slate-500 leading-relaxed">Your medical records and consultation history are protected with complete privacy.</p>
             </div>
 
             {/* Card 4 */}
@@ -2428,7 +2560,7 @@ export default function Home() {
               <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm mb-4">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-.553.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
               </div>
-              <h3 className="text-sm font-bold text-slate-800 font-poppins mb-2">Clinic-Like Experience</h3>
+              <h3 className="text-sm font-bold text-slate-800 font-poppins mb-2">1-on-1 Care</h3>
               <p className="text-xs text-slate-500 leading-relaxed">Enjoy personalized one-on-one video consultations with the same care as an in-person visit.</p>
             </div>
 
@@ -2749,9 +2881,9 @@ export default function Home() {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-brand-100 hover:shadow-brand-200 transition-all active:scale-95 flex items-center justify-center gap-2 montserrat-font text-xs uppercase tracking-wider mt-4"
+                className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-brand-100 hover:shadow-brand-200 transition-all active:scale-95 flex items-center justify-center gap-2 montserrat-font text-xs uppercase tracking-wider mt-4 cursor-pointer"
               >
-                <span>Book your appointment</span>
+                <span>Book Your Consultation</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -3111,6 +3243,30 @@ export default function Home() {
             <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border border-white"></span>
           </span>
         </button>
+      </div>
+
+      {/* Sticky Bottom CTA Bar on Mobile for Meta Ads Traffic */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 px-4 py-3 shadow-2xl flex items-center gap-2.5">
+        <button
+          onClick={() => openBookingModal()}
+          className="flex-1 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold text-xs py-3.5 px-4 rounded-2xl shadow-lg shadow-brand-200 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+        >
+          <span>Book Consultation</span>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7-7 7M3 12h18" />
+          </svg>
+        </button>
+        <a
+          href="https://wa.me/919861787335?text=Hello,%20I%20would%20like%20to%20consult%20a%20doctor%20online."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-12 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-md shadow-emerald-100 active:scale-95"
+          aria-label="WhatsApp"
+        >
+          <svg className="w-5 h-5 fill-current" viewBox="0 0 448 512">
+            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+          </svg>
+        </a>
       </div>
     </>
   );
